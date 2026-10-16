@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Анимация в Ursina: как программировать и какие нужны 3D-модели</title>
+<script>
+/* Тема применяется до отрисовки, чтобы страница не мигала */
+try { var t = localStorage.getItem('guide-theme'); if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<style>
+/* ---------- Цвет: светлая тема по умолчанию ---------- */
+:root {
+  --bg: #f6f8fa;
+  --ink: #161b22;
+  --muted: #566170;
+  --rule: #d9dee5;
+  --accent: #14708c;
+  --accent-soft: #e2f0f5;
+  --code-bg: #eceff3;
+  --comment: #4f6272;
+  --note-bg: #eaf3f6;
+  --focus: #14708c;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1217; --ink: #e3e8ee; --muted: #9aa5b3; --rule: #27303a;
+    --accent: #67c3ea; --accent-soft: #14262f; --code-bg: #151b23;
+    --comment: #8b9db0; --note-bg: #131f27; --focus: #67c3ea;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1217; --ink: #e3e8ee; --muted: #9aa5b3; --rule: #27303a;
+  --accent: #67c3ea; --accent-soft: #14262f; --code-bg: #151b23;
+  --comment: #8b9db0; --note-bg: #131f27; --focus: #67c3ea;
+  color-scheme: dark;
+}
+
+/* ---------- База ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: Georgia, "Noto Serif", "Times New Roman", serif;
+  font-size: 18px;
+  line-height: 1.7;
+}
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 3px; }
+a { color: var(--accent); text-underline-offset: 3px; }
+
+.sans, .toc, .topbar, .copy, .theme-toggle, h1, h2, h3, th, .lang {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+code, pre, kbd {
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, "DejaVu Sans Mono", monospace;
+}
+
+/* ---------- Раскладка ---------- */
+.layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); min-height: 100vh; }
+
+.sidebar {
+  position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  padding: 28px 20px 24px 28px;
+  border-right: 1px solid var(--rule);
+  display: flex; flex-direction: column; gap: 16px;
+}
+.sidebar .brand {
+  font: 600 15px/1.3 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  letter-spacing: .01em; margin: 0;
+}
+.toc { font-size: 14.5px; line-height: 1.4; flex: 1; }
+.toc ul { list-style: none; margin: 0; padding: 0; }
+.toc > ul > li { margin: 0 0 2px; }
+.toc ul ul { margin: 2px 0 8px 0; }
+.toc a {
+  display: block; text-decoration: none; color: var(--muted);
+  padding: 5px 10px 5px 12px; border-left: 2px solid transparent; border-radius: 0 4px 4px 0;
+}
+.toc ul ul a { padding-left: 26px; font-size: 13.5px; }
+.toc a:hover { color: var(--ink); background: var(--accent-soft); }
+.toc a[aria-current="location"] {
+  color: var(--accent); border-left-color: var(--accent); background: var(--accent-soft); font-weight: 600;
+}
+.theme-toggle {
+  align-self: flex-start; font-size: 13.5px; color: var(--muted); background: none;
+  border: 1px solid var(--rule); border-radius: 6px; padding: 6px 12px; cursor: pointer;
+}
+.theme-toggle:hover { color: var(--ink); border-color: var(--muted); }
+
+.main { padding: 64px clamp(20px, 5vw, 80px) 140px; min-width: 0; }
+.prose { max-width: 56rem; margin: 0 auto 0 0; }
+/* Текст держим в комфортной строке, а блоки кода и таблицы разрешаем шире: в коде важны комментарии */
+.prose > p, .prose > ul, .prose > ol, .prose > h2, .prose > h3, .prose > blockquote, .hero { max-width: 46rem; }
+
+/* ---------- Шапка документа ---------- */
+.hero { margin-bottom: 48px; }
+.hero h1 {
+  font-size: clamp(30px, 4.4vw, 44px); line-height: 1.14; letter-spacing: -.015em;
+  font-weight: 650; margin: 0 0 20px;
+}
+.lead { font-size: 20px; line-height: 1.6; color: var(--muted); margin: 0; }
+
+/* ---------- Текст ---------- */
+h2, h3 { line-height: 1.25; scroll-margin-top: 28px; position: relative; }
+h2 { font-size: 28px; font-weight: 650; letter-spacing: -.01em; margin: 72px 0 18px; }
+h3 { font-size: 20.5px; font-weight: 650; margin: 44px 0 12px; }
+p, ul, ol { margin: 0 0 1.1em; }
+li { margin-bottom: .35em; }
+ul, ol { padding-left: 1.4em; }
+strong { font-weight: 700; }
+.anchor {
+  position: absolute; left: -1.1em; top: 0; width: 1em; text-align: center;
+  text-decoration: none; color: var(--muted); opacity: 0; font-weight: 400;
+}
+h2:hover .anchor, h3:hover .anchor, .anchor:focus-visible { opacity: 1; }
+
+:not(pre) > code {
+  background: var(--code-bg); padding: .12em .38em; border-radius: 4px; font-size: .84em;
+  overflow-wrap: anywhere;
+}
+
+blockquote {
+  margin: 1.6em 0; padding: 14px 18px; background: var(--note-bg);
+  border-left: 3px solid var(--accent); border-radius: 0 6px 6px 0;
+}
+blockquote p:last-child { margin-bottom: 0; }
+
+/* ---------- Таблицы ---------- */
+.table-wrap { overflow-x: auto; margin: 1.6em 0; }
+table { border-collapse: collapse; width: 100%; font-size: 15.5px; line-height: 1.5; }
+th { text-align: left; font-weight: 650; padding: 8px 14px 8px 0; border-bottom: 2px solid var(--ink); white-space: nowrap; }
+td { padding: 10px 14px 10px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+td code { font-size: .82em; }
+
+/* ---------- Блоки кода ---------- */
+.code { margin: 1.6em 0; border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; background: var(--code-bg); }
+.code-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 8px 6px 14px; border-bottom: 1px solid var(--rule);
+}
+.lang { font-size: 13px; color: var(--muted); }
+.copy {
+  font-size: 13px; color: var(--ink); background: var(--bg); border: 1px solid var(--rule);
+  border-radius: 6px; padding: 5px 12px; cursor: pointer; min-width: 112px;
+}
+.copy:hover { border-color: var(--accent); color: var(--accent); }
+.copy[data-state="done"] { border-color: var(--accent); color: var(--accent); }
+.copy[data-state="fail"] { border-color: #c2410c; color: #c2410c; }
+.code pre {
+  margin: 0; padding: 16px 18px; overflow-x: auto; background: var(--code-bg);
+  font-size: 14px; line-height: 1.6; tab-size: 4;
+}
+.code pre code { background: none; padding: 0; font-size: inherit; }
+
+/* Комментарии в коде несут пояснения: делаем их читаемыми, не бледными */
+.code pre .c, .code pre .c1, .code pre .cm, .code pre .ch, .code pre .cs, .code pre .sd { color: var(--comment) !important; font-style: normal !important; }
+
+/* ---------- Мобильная верхняя панель ---------- */
+.topbar { display: none; }
+.backdrop { display: none; }
+
+@media (max-width: 960px) {
+  .layout { display: block; }
+  .topbar {
+    display: flex; align-items: center; gap: 12px;
+    position: fixed; top: 0; left: 0; right: 0; z-index: 20; height: 52px;
+    padding: 0 16px; padding-top: env(safe-area-inset-top, 0px);
+    background: var(--bg); border-bottom: 1px solid var(--rule);
+    font-size: 15px; font-weight: 600;
+  }
+  .topbar button {
+    font: inherit; font-weight: 500; font-size: 14px; color: var(--ink); background: none;
+    border: 1px solid var(--rule); border-radius: 6px; padding: 6px 12px; cursor: pointer;
+  }
+  .sidebar {
+    position: fixed; z-index: 30; left: 0; top: 0; bottom: 0; width: min(320px, 86vw); height: auto;
+    background: var(--bg); transform: translateX(-102%);
+    padding-top: calc(28px + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  }
+  @media (prefers-reduced-motion: no-preference) { .sidebar { transition: transform .2s ease; } }
+  body.nav-open .sidebar { transform: none; }
+  body.nav-open .backdrop { display: block; position: fixed; inset: 0; z-index: 25; background: rgba(0, 0, 0, .4); }
+  .main { padding-top: 84px; padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)); }
+  h2, h3 { scroll-margin-top: 72px; }
+  .anchor { display: none; }
+  body { font-size: 17px; }
+  .lead { font-size: 18px; }
+}
+
+@media print {
+  .sidebar, .topbar, .copy, .anchor { display: none !important; }
+  .layout { display: block; }
+  body { background: #fff; color: #000; }
+  .code pre { white-space: pre-wrap; }
+}
+
+/* ---------- Подсветка синтаксиса (Pygments) ---------- */
+pre { line-height: 125%; }
+td.linenos .normal { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+span.linenos { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+td.linenos .special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+.code pre .hll { background-color: #ffffcc }
+.code pre { background: #f8f8f8; }
+.code pre .c { color: #3D7B7B; font-style: italic } /* Comment */
+.code pre .err { border: 1px solid #F00 } /* Error */
+.code pre .k { color: #008000; font-weight: bold } /* Keyword */
+.code pre .o { color: #666 } /* Operator */
+.code pre .ch { color: #3D7B7B; font-style: italic } /* Comment.Hashbang */
+.code pre .cm { color: #3D7B7B; font-style: italic } /* Comment.Multiline */
+.code pre .cp { color: #9C6500 } /* Comment.Preproc */
+.code pre .cpf { color: #3D7B7B; font-style: italic } /* Comment.PreprocFile */
+.code pre .c1 { color: #3D7B7B; font-style: italic } /* Comment.Single */
+.code pre .cs { color: #3D7B7B; font-style: italic } /* Comment.Special */
+.code pre .gd { color: #A00000 } /* Generic.Deleted */
+.code pre .ge { font-style: italic } /* Generic.Emph */
+.code pre .ges { font-weight: bold; font-style: italic } /* Generic.EmphStrong */
+.code pre .gr { color: #E40000 } /* Generic.Error */
+.code pre .gh { color: #000080; font-weight: bold } /* Generic.Heading */
+.code pre .gi { color: #008400 } /* Generic.Inserted */
+.code pre .go { color: #717171 } /* Generic.Output */
+.code pre .gp { color: #000080; font-weight: bold } /* Generic.Prompt */
+.code pre .gs { font-weight: bold } /* Generic.Strong */
+.code pre .gu { color: #800080; font-weight: bold } /* Generic.Subheading */
+.code pre .gt { color: #04D } /* Generic.Traceback */
+.code pre .kc { color: #008000; font-weight: bold } /* Keyword.Constant */
+.code pre .kd { color: #008000; font-weight: bold } /* Keyword.Declaration */
+.code pre .kn { color: #008000; font-weight: bold } /* Keyword.Namespace */
+.code pre .kp { color: #008000 } /* Keyword.Pseudo */
+.code pre .kr { color: #008000; font-weight: bold } /* Keyword.Reserved */
+.code pre .kt { color: #B00040 } /* Keyword.Type */
+.code pre .m { color: #666 } /* Literal.Number */
+.code pre .s { color: #BA2121 } /* Literal.String */
+.code pre .na { color: #687822 } /* Name.Attribute */
+.code pre .nb { color: #008000 } /* Name.Builtin */
+.code pre .nc { color: #00F; font-weight: bold } /* Name.Class */
+.code pre .no { color: #800 } /* Name.Constant */
+.code pre .nd { color: #A2F } /* Name.Decorator */
+.code pre .ni { color: #717171; font-weight: bold } /* Name.Entity */
+.code pre .ne { color: #CB3F38; font-weight: bold } /* Name.Exception */
+.code pre .nf { color: #00F } /* Name.Function */
+.code pre .nl { color: #767600 } /* Name.Label */
+.code pre .nn { color: #00F; font-weight: bold } /* Name.Namespace */
+.code pre .nt { color: #008000; font-weight: bold } /* Name.Tag */
+.code pre .nv { color: #19177C } /* Name.Variable */
+.code pre .ow { color: #A2F; font-weight: bold } /* Operator.Word */
+.code pre .w { color: #BBB } /* Text.Whitespace */
+.code pre .mb { color: #666 } /* Literal.Number.Bin */
+.code pre .mf { color: #666 } /* Literal.Number.Float */
+.code pre .mh { color: #666 } /* Literal.Number.Hex */
+.code pre .mi { color: #666 } /* Literal.Number.Integer */
+.code pre .mo { color: #666 } /* Literal.Number.Oct */
+.code pre .sa { color: #BA2121 } /* Literal.String.Affix */
+.code pre .sb { color: #BA2121 } /* Literal.String.Backtick */
+.code pre .sc { color: #BA2121 } /* Literal.String.Char */
+.code pre .dl { color: #BA2121 } /* Literal.String.Delimiter */
+.code pre .sd { color: #BA2121; font-style: italic } /* Literal.String.Doc */
+.code pre .s2 { color: #BA2121 } /* Literal.String.Double */
+.code pre .se { color: #AA5D1F; font-weight: bold } /* Literal.String.Escape */
+.code pre .sh { color: #BA2121 } /* Literal.String.Heredoc */
+.code pre .si { color: #A45A77; font-weight: bold } /* Literal.String.Interpol */
+.code pre .sx { color: #008000 } /* Literal.String.Other */
+.code pre .sr { color: #A45A77 } /* Literal.String.Regex */
+.code pre .s1 { color: #BA2121 } /* Literal.String.Single */
+.code pre .ss { color: #19177C } /* Literal.String.Symbol */
+.code pre .bp { color: #008000 } /* Name.Builtin.Pseudo */
+.code pre .fm { color: #00F } /* Name.Function.Magic */
+.code pre .vc { color: #19177C } /* Name.Variable.Class */
+.code pre .vg { color: #19177C } /* Name.Variable.Global */
+.code pre .vi { color: #19177C } /* Name.Variable.Instance */
+.code pre .vm { color: #19177C } /* Name.Variable.Magic */
+.code pre .il { color: #666 } /* Literal.Number.Integer.Long */
+@media (prefers-color-scheme: dark) {
+pre { line-height: 125%; }
+td.linenos .normal { color: #6e7681; background-color: #0d1117; padding-left: 5px; padding-right: 5px; }
+span.linenos { color: #6e7681; background-color: #0d1117; padding-left: 5px; padding-right: 5px; }
+td.linenos .special { color: #e6edf3; background-color: #6e7681; padding-left: 5px; padding-right: 5px; }
+span.linenos.special { color: #e6edf3; background-color: #6e7681; padding-left: 5px; padding-right: 5px; }
+:root:not([data-theme="light"]) .code pre .hll { background-color: #6e7681 }
+:root:not([data-theme="light"]) .code pre { background: #0d1117; color: #E6EDF3 }
+:root:not([data-theme="light"]) .code pre .c { color: #8B949E; font-style: italic } /* Comment */
+:root:not([data-theme="light"]) .code pre .err { color: #F85149 } /* Error */
+:root:not([data-theme="light"]) .code pre .esc { color: #E6EDF3 } /* Escape */
+:root:not([data-theme="light"]) .code pre .g { color: #E6EDF3 } /* Generic */
+:root:not([data-theme="light"]) .code pre .k { color: #FF7B72 } /* Keyword */
+:root:not([data-theme="light"]) .code pre .l { color: #A5D6FF } /* Literal */
+:root:not([data-theme="light"]) .code pre .n { color: #E6EDF3 } /* Name */
+:root:not([data-theme="light"]) .code pre .o { color: #FF7B72; font-weight: bold } /* Operator */
+:root:not([data-theme="light"]) .code pre .x { color: #E6EDF3 } /* Other */
+:root:not([data-theme="light"]) .code pre .p { color: #E6EDF3 } /* Punctuation */
+:root:not([data-theme="light"]) .code pre .ch { color: #8B949E; font-style: italic } /* Comment.Hashbang */
+:root:not([data-theme="light"]) .code pre .cm { color: #8B949E; font-style: italic } /* Comment.Multiline */
+:root:not([data-theme="light"]) .code pre .cp { color: #8B949E; font-weight: bold; font-style: italic } /* Comment.Preproc */
+:root:not([data-theme="light"]) .code pre .cpf { color: #8B949E; font-style: italic } /* Comment.PreprocFile */
+:root:not([data-theme="light"]) .code pre .c1 { color: #8B949E; font-style: italic } /* Comment.Single */
+:root:not([data-theme="light"]) .code pre .cs { color: #8B949E; font-weight: bold; font-style: italic } /* Comment.Special */
+:root:not([data-theme="light"]) .code pre .gd { color: #FFA198; background-color: #490202 } /* Generic.Deleted */
+:root:not([data-theme="light"]) .code pre .ge { color: #E6EDF3; font-style: italic } /* Generic.Emph */
+:root:not([data-theme="light"]) .code pre .ges { color: #E6EDF3; font-weight: bold; font-style: italic } /* Generic.EmphStrong */
+:root:not([data-theme="light"]) .code pre .gr { color: #FFA198 } /* Generic.Error */
+:root:not([data-theme="light"]) .code pre .gh { color: #79C0FF; font-weight: bold } /* Generic.Heading */
+:root:not([data-theme="light"]) .code pre .gi { color: #56D364; background-color: #0F5323 } /* Generic.Inserted */
+:root:not([data-theme="light"]) .code pre .go { color: #8B949E } /* Generic.Output */
+:root:not([data-theme="light"]) .code pre .gp { color: #8B949E } /* Generic.Prompt */
+:root:not([data-theme="light"]) .code pre .gs { color: #E6EDF3; font-weight: bold } /* Generic.Strong */
+:root:not([data-theme="light"]) .code pre .gu { color: #79C0FF } /* Generic.Subheading */
+:root:not([data-theme="light"]) .code pre .gt { color: #FF7B72 } /* Generic.Traceback */
+:root:not([data-theme="light"]) .code pre .g-Underline { color: #E6EDF3; text-decoration: underline } /* Generic.Underline */
+:root:not([data-theme="light"]) .code pre .kc { color: #79C0FF } /* Keyword.Constant */
+:root:not([data-theme="light"]) .code pre .kd { color: #FF7B72 } /* Keyword.Declaration */
+:root:not([data-theme="light"]) .code pre .kn { color: #FF7B72 } /* Keyword.Namespace */
+:root:not([data-theme="light"]) .code pre .kp { color: #79C0FF } /* Keyword.Pseudo */
+:root:not([data-theme="light"]) .code pre .kr { color: #FF7B72 } /* Keyword.Reserved */
+:root:not([data-theme="light"]) .code pre .kt { color: #FF7B72 } /* Keyword.Type */
+:root:not([data-theme="light"]) .code pre .ld { color: #79C0FF } /* Literal.Date */
+:root:not([data-theme="light"]) .code pre .m { color: #A5D6FF } /* Literal.Number */
+:root:not([data-theme="light"]) .code pre .s { color: #A5D6FF } /* Literal.String */
+:root:not([data-theme="light"]) .code pre .na { color: #E6EDF3 } /* Name.Attribute */
+:root:not([data-theme="light"]) .code pre .nb { color: #E6EDF3 } /* Name.Builtin */
+:root:not([data-theme="light"]) .code pre .nc { color: #F0883E; font-weight: bold } /* Name.Class */
+:root:not([data-theme="light"]) .code pre .no { color: #79C0FF; font-weight: bold } /* Name.Constant */
+:root:not([data-theme="light"]) .code pre .nd { color: #D2A8FF; font-weight: bold } /* Name.Decorator */
+:root:not([data-theme="light"]) .code pre .ni { color: #FFA657 } /* Name.Entity */
+:root:not([data-theme="light"]) .code pre .ne { color: #F0883E; font-weight: bold } /* Name.Exception */
+:root:not([data-theme="light"]) .code pre .nf { color: #D2A8FF; font-weight: bold } /* Name.Function */
+:root:not([data-theme="light"]) .code pre .nl { color: #79C0FF; font-weight: bold } /* Name.Label */
+:root:not([data-theme="light"]) .code pre .nn { color: #FF7B72 } /* Name.Namespace */
+:root:not([data-theme="light"]) .code pre .nx { color: #E6EDF3 } /* Name.Other */
+:root:not([data-theme="light"]) .code pre .py { color: #79C0FF } /* Name.Property */
+:root:not([data-theme="light"]) .code pre .nt { color: #7EE787 } /* Name.Tag */
+:root:not([data-theme="light"]) .code pre .nv { color: #79C0FF } /* Name.Variable */
+:root:not([data-theme="light"]) .code pre .ow { color: #FF7B72; font-weight: bold } /* Operator.Word */
+:root:not([data-theme="light"]) .code pre .pm { color: #E6EDF3 } /* Punctuation.Marker */
+:root:not([data-theme="light"]) .code pre .w { color: #6E7681 } /* Text.Whitespace */
+:root:not([data-theme="light"]) .code pre .mb { color: #A5D6FF } /* Literal.Number.Bin */
+:root:not([data-theme="light"]) .code pre .mf { color: #A5D6FF } /* Literal.Number.Float */
+:root:not([data-theme="light"]) .code pre .mh { color: #A5D6FF } /* Literal.Number.Hex */
+:root:not([data-theme="light"]) .code pre .mi { color: #A5D6FF } /* Literal.Number.Integer */
+:root:not([data-theme="light"]) .code pre .mo { color: #A5D6FF } /* Literal.Number.Oct */
+:root:not([data-theme="light"]) .code pre .sa { color: #79C0FF } /* Literal.String.Affix */
+:root:not([data-theme="light"]) .code pre .sb { color: #A5D6FF } /* Literal.String.Backtick */
+:root:not([data-theme="light"]) .code pre .sc { color: #A5D6FF } /* Literal.String.Char */
+:root:not([data-theme="light"]) .code pre .dl { color: #79C0FF } /* Literal.String.Delimiter */
+:root:not([data-theme="light"]) .code pre .sd { color: #A5D6FF } /* Literal.String.Doc */
+:root:not([data-theme="light"]) .code pre .s2 { color: #A5D6FF } /* Literal.String.Double */
+:root:not([data-theme="light"]) .code pre .se { color: #79C0FF } /* Literal.String.Escape */
+:root:not([data-theme="light"]) .code pre .sh { color: #79C0FF } /* Literal.String.Heredoc */
+:root:not([data-theme="light"]) .code pre .si { color: #A5D6FF } /* Literal.String.Interpol */
+:root:not([data-theme="light"]) .code pre .sx { color: #A5D6FF } /* Literal.String.Other */
+:root:not([data-theme="light"]) .code pre .sr { color: #79C0FF } /* Literal.String.Regex */
+:root:not([data-theme="light"]) .code pre .s1 { color: #A5D6FF } /* Literal.String.Single */
+:root:not([data-theme="light"]) .code pre .ss { color: #A5D6FF } /* Literal.String.Symbol */
+:root:not([data-theme="light"]) .code pre .bp { color: #E6EDF3 } /* Name.Builtin.Pseudo */
+:root:not([data-theme="light"]) .code pre .fm { color: #D2A8FF; font-weight: bold } /* Name.Function.Magic */
+:root:not([data-theme="light"]) .code pre .vc { color: #79C0FF } /* Name.Variable.Class */
+:root:not([data-theme="light"]) .code pre .vg { color: #79C0FF } /* Name.Variable.Global */
+:root:not([data-theme="light"]) .code pre .vi { color: #79C0FF } /* Name.Variable.Instance */
+:root:not([data-theme="light"]) .code pre .vm { color: #79C0FF } /* Name.Variable.Magic */
+:root:not([data-theme="light"]) .code pre .il { color: #A5D6FF } /* Literal.Number.Integer.Long */
+}
+pre { line-height: 125%; }
+td.linenos .normal { color: #6e7681; background-color: #0d1117; padding-left: 5px; padding-right: 5px; }
+span.linenos { color: #6e7681; background-color: #0d1117; padding-left: 5px; padding-right: 5px; }
+td.linenos .special { color: #e6edf3; background-color: #6e7681; padding-left: 5px; padding-right: 5px; }
+span.linenos.special { color: #e6edf3; background-color: #6e7681; padding-left: 5px; padding-right: 5px; }
+:root[data-theme="dark"] .code pre .hll { background-color: #6e7681 }
+:root[data-theme="dark"] .code pre { background: #0d1117; color: #E6EDF3 }
+:root[data-theme="dark"] .code pre .c { color: #8B949E; font-style: italic } /* Comment */
+:root[data-theme="dark"] .code pre .err { color: #F85149 } /* Error */
+:root[data-theme="dark"] .code pre .esc { color: #E6EDF3 } /* Escape */
+:root[data-theme="dark"] .code pre .g { color: #E6EDF3 } /* Generic */
+:root[data-theme="dark"] .code pre .k { color: #FF7B72 } /* Keyword */
+:root[data-theme="dark"] .code pre .l { color: #A5D6FF } /* Literal */
+:root[data-theme="dark"] .code pre .n { color: #E6EDF3 } /* Name */
+:root[data-theme="dark"] .code pre .o { color: #FF7B72; font-weight: bold } /* Operator */
+:root[data-theme="dark"] .code pre .x { color: #E6EDF3 } /* Other */
+:root[data-theme="dark"] .code pre .p { color: #E6EDF3 } /* Punctuation */
+:root[data-theme="dark"] .code pre .ch { color: #8B949E; font-style: italic } /* Comment.Hashbang */
+:root[data-theme="dark"] .code pre .cm { color: #8B949E; font-style: italic } /* Comment.Multiline */
+:root[data-theme="dark"] .code pre .cp { color: #8B949E; font-weight: bold; font-style: italic } /* Comment.Preproc */
+:root[data-theme="dark"] .code pre .cpf { color: #8B949E; font-style: italic } /* Comment.PreprocFile */
+:root[data-theme="dark"] .code pre .c1 { color: #8B949E; font-style: italic } /* Comment.Single */
+:root[data-theme="dark"] .code pre .cs { color: #8B949E; font-weight: bold; font-style: italic } /* Comment.Special */
+:root[data-theme="dark"] .code pre .gd { color: #FFA198; background-color: #490202 } /* Generic.Deleted */
+:root[data-theme="dark"] .code pre .ge { color: #E6EDF3; font-style: italic } /* Generic.Emph */
+:root[data-theme="dark"] .code pre .ges { color: #E6EDF3; font-weight: bold; font-style: italic } /* Generic.EmphStrong */
+:root[data-theme="dark"] .code pre .gr { color: #FFA198 } /* Generic.Error */
+:root[data-theme="dark"] .code pre .gh { color: #79C0FF; font-weight: bold } /* Generic.Heading */
+:root[data-theme="dark"] .code pre .gi { color: #56D364; background-color: #0F5323 } /* Generic.Inserted */
+:root[data-theme="dark"] .code pre .go { color: #8B949E } /* Generic.Output */
+:root[data-theme="dark"] .code pre .gp { color: #8B949E } /* Generic.Prompt */
+:root[data-theme="dark"] .code pre .gs { color: #E6EDF3; font-weight: bold } /* Generic.Strong */
+:root[data-theme="dark"] .code pre .gu { color: #79C0FF } /* Generic.Subheading */
+:root[data-theme="dark"] .code pre .gt { color: #FF7B72 } /* Generic.Traceback */
+:root[data-theme="dark"] .code pre .g-Underline { color: #E6EDF3; text-decoration: underline } /* Generic.Underline */
+:root[data-theme="dark"] .code pre .kc { color: #79C0FF } /* Keyword.Constant */
+:root[data-theme="dark"] .code pre .kd { color: #FF7B72 } /* Keyword.Declaration */
+:root[data-theme="dark"] .code pre .kn { color: #FF7B72 } /* Keyword.Namespace */
+:root[data-theme="dark"] .code pre .kp { color: #79C0FF } /* Keyword.Pseudo */
+:root[data-theme="dark"] .code pre .kr { color: #FF7B72 } /* Keyword.Reserved */
+:root[data-theme="dark"] .code pre .kt { color: #FF7B72 } /* Keyword.Type */
+:root[data-theme="dark"] .code pre .ld { color: #79C0FF } /* Literal.Date */
+:root[data-theme="dark"] .code pre .m { color: #A5D6FF } /* Literal.Number */
+:root[data-theme="dark"] .code pre .s { color: #A5D6FF } /* Literal.String */
+:root[data-theme="dark"] .code pre .na { color: #E6EDF3 } /* Name.Attribute */
+:root[data-theme="dark"] .code pre .nb { color: #E6EDF3 } /* Name.Builtin */
+:root[data-theme="dark"] .code pre .nc { color: #F0883E; font-weight: bold } /* Name.Class */
+:root[data-theme="dark"] .code pre .no { color: #79C0FF; font-weight: bold } /* Name.Constant */
+:root[data-theme="dark"] .code pre .nd { color: #D2A8FF; font-weight: bold } /* Name.Decorator */
+:root[data-theme="dark"] .code pre .ni { color: #FFA657 } /* Name.Entity */
+:root[data-theme="dark"] .code pre .ne { color: #F0883E; font-weight: bold } /* Name.Exception */
+:root[data-theme="dark"] .code pre .nf { color: #D2A8FF; font-weight: bold } /* Name.Function */
+:root[data-theme="dark"] .code pre .nl { color: #79C0FF; font-weight: bold } /* Name.Label */
+:root[data-theme="dark"] .code pre .nn { color: #FF7B72 } /* Name.Namespace */
+:root[data-theme="dark"] .code pre .nx { color: #E6EDF3 } /* Name.Other */
+:root[data-theme="dark"] .code pre .py { color: #79C0FF } /* Name.Property */
+:root[data-theme="dark"] .code pre .nt { color: #7EE787 } /* Name.Tag */
+:root[data-theme="dark"] .code pre .nv { color: #79C0FF } /* Name.Variable */
+:root[data-theme="dark"] .code pre .ow { color: #FF7B72; font-weight: bold } /* Operator.Word */
+:root[data-theme="dark"] .code pre .pm { color: #E6EDF3 } /* Punctuation.Marker */
+:root[data-theme="dark"] .code pre .w { color: #6E7681 } /* Text.Whitespace */
+:root[data-theme="dark"] .code pre .mb { color: #A5D6FF } /* Literal.Number.Bin */
+:root[data-theme="dark"] .code pre .mf { color: #A5D6FF } /* Literal.Number.Float */
+:root[data-theme="dark"] .code pre .mh { color: #A5D6FF } /* Literal.Number.Hex */
+:root[data-theme="dark"] .code pre .mi { color: #A5D6FF } /* Literal.Number.Integer */
+:root[data-theme="dark"] .code pre .mo { color: #A5D6FF } /* Literal.Number.Oct */
+:root[data-theme="dark"] .code pre .sa { color: #79C0FF } /* Literal.String.Affix */
+:root[data-theme="dark"] .code pre .sb { color: #A5D6FF } /* Literal.String.Backtick */
+:root[data-theme="dark"] .code pre .sc { color: #A5D6FF } /* Literal.String.Char */
+:root[data-theme="dark"] .code pre .dl { color: #79C0FF } /* Literal.String.Delimiter */
+:root[data-theme="dark"] .code pre .sd { color: #A5D6FF } /* Literal.String.Doc */
+:root[data-theme="dark"] .code pre .s2 { color: #A5D6FF } /* Literal.String.Double */
+:root[data-theme="dark"] .code pre .se { color: #79C0FF } /* Literal.String.Escape */
+:root[data-theme="dark"] .code pre .sh { color: #79C0FF } /* Literal.String.Heredoc */
+:root[data-theme="dark"] .code pre .si { color: #A5D6FF } /* Literal.String.Interpol */
+:root[data-theme="dark"] .code pre .sx { color: #A5D6FF } /* Literal.String.Other */
+:root[data-theme="dark"] .code pre .sr { color: #79C0FF } /* Literal.String.Regex */
+:root[data-theme="dark"] .code pre .s1 { color: #A5D6FF } /* Literal.String.Single */
+:root[data-theme="dark"] .code pre .ss { color: #A5D6FF } /* Literal.String.Symbol */
+:root[data-theme="dark"] .code pre .bp { color: #E6EDF3 } /* Name.Builtin.Pseudo */
+:root[data-theme="dark"] .code pre .fm { color: #D2A8FF; font-weight: bold } /* Name.Function.Magic */
+:root[data-theme="dark"] .code pre .vc { color: #79C0FF } /* Name.Variable.Class */
+:root[data-theme="dark"] .code pre .vg { color: #79C0FF } /* Name.Variable.Global */
+:root[data-theme="dark"] .code pre .vi { color: #79C0FF } /* Name.Variable.Instance */
+:root[data-theme="dark"] .code pre .vm { color: #79C0FF } /* Name.Variable.Magic */
+:root[data-theme="dark"] .code pre .il { color: #A5D6FF } /* Literal.Number.Integer.Long */
+</style>
+</head>
+<body>
+<div class="topbar">
+  <button type="button" id="menu" aria-expanded="false" aria-controls="sidebar">Содержание</button>
+  <span>Анимация в Ursina</span>
+</div>
+<div class="backdrop" id="backdrop"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <p class="brand">Анимация в Ursina</p>
+    <button type="button" class="theme-toggle" id="theme" hidden>Тёмная тема</button>
+    <nav class="toc" aria-label="Содержание"><ul><li><a href="#коротко-три-уровня-анимации">Коротко: три уровня анимации</a></li><li><a href="#1-анимация-объекта-твины-последовательности-update">1. Анимация объекта: твины, последовательности, update</a></li><li><a href="#2-покадровая-анимация">2. Покадровая анимация</a></li><li><a href="#3-откуда-берётся-скелетная-анимация">3. Откуда берётся скелетная анимация</a></li><li><a href="#4-скелетная-анимация-через-actor">4. Скелетная анимация через Actor</a><ul><li><a href="#41-сначала-проверьте-что-есть-в-модели">4.1. Сначала проверьте, что есть в модели</a></li><li><a href="#42-готовые-анимации-персонаж-с-плавным-переходом-между-idle-и-walk">4.2. Готовые анимации: персонаж с плавным переходом между idle и walk</a></li><li><a href="#43-движение-npc-по-миру-и-анимация-шагов">4.3. Движение NPC по миру и анимация шагов</a></li><li><a href="#44-процедурная-анимация-костей">4.4. Процедурная анимация костей</a></li></ul></li><li><a href="#5-требования-к-3d-модели">5. Требования к 3D-модели</a><ul><li><a href="#формат-и-экспорт">Формат и экспорт</a></li><li><a href="#скелет-и-меш">Скелет и меш</a></li><li><a href="#анимации">Анимации</a></li><li><a href="#где-взять-анимации-для-гуманоида">Где взять анимации для гуманоида</a></li></ul></li><li><a href="#6-подводные-камни">6. Подводные камни</a></li><li><a href="#7-шпаргалка">7. Шпаргалка</a></li></ul></nav>
+  </aside>
+
+  <main class="main">
+    <article class="prose">
+<header class="hero"><h1 id="анимация-в-ursina-как-программировать-и-какие-нужны-3d-модели">Анимация в Ursina: как программировать и какие нужны 3D-модели</h1><p class="lead">Руководство для тех, кто делает NPC и другие анимированные объекты в игре на Ursina. Примеры проверены на Ursina 8.3, Panda3D 1.10.16 и panda3d-gltf 1.3.0 (без окна, на программном отрисовщике). Исключение: воспроизведение готовых скелетных анимаций через <code>Actor</code> (раздел 4.2). Это стандартный API Panda3D, но на готовом анимированном файле я его не запускал.</p></header>
+<h2 id="коротко-три-уровня-анимации">Коротко: три уровня анимации<a class="anchor" href="#коротко-три-уровня-анимации" title="Ссылка на раздел">#</a></h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Уровень</th>
+<th>Для чего</th>
+<th>Чем делать</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Анимация объекта целиком</td>
+<td>двери, платформы, UI, прыжки, вращения</td>
+<td><code>animate_*</code>, <code>Sequence</code>, <code>invoke</code>, <code>update()</code></td>
+</tr>
+<tr>
+<td>Покадровая анимация</td>
+<td>2D-спрайты, мигающий огонь, смена мешей</td>
+<td><code>FrameAnimation3d</code>, <code>Animation</code>, <code>SpriteSheetAnimation</code>, <code>Animator</code></td>
+</tr>
+<tr>
+<td>Скелетная анимация</td>
+<td>человек, животное, любой персонаж с костями</td>
+<td><code>Actor</code> из Panda3D</td>
+</tr>
+</tbody>
+</table></div>
+<p>Для NPC, который двигается как человек, нужен третий уровень. Первый уровень пригодится вокруг него: он двигает персонажа по миру, а скелетная анимация показывает шаги.</p>
+<h2 id="1-анимация-объекта-твины-последовательности-update">1. Анимация объекта: твины, последовательности, update<a class="anchor" href="#1-анимация-объекта-твины-последовательности-update" title="Ссылка на раздел">#</a></h2>
+<p>Твин плавно меняет свойство за заданное время. Любое числовое свойство можно анимировать по имени через <code>animate('имя', значение, ...)</code>.</p>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="kn">from</span><span class="w"> </span><span class="nn">ursina</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="n">app</span> <span class="o">=</span> <span class="n">Ursina</span><span class="p">()</span>
+
+<span class="n">cube</span> <span class="o">=</span> <span class="n">Entity</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s1">&#39;cube&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="o">.</span><span class="n">orange</span><span class="p">)</span>
+
+<span class="c1"># Твины: плавное изменение свойства за duration секунд</span>
+<span class="n">cube</span><span class="o">.</span><span class="n">animate_position</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">duration</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">curve</span><span class="o">=</span><span class="n">curve</span><span class="o">.</span><span class="n">out_expo</span><span class="p">)</span>
+<span class="n">cube</span><span class="o">.</span><span class="n">animate</span><span class="p">(</span><span class="s1">&#39;rotation_y&#39;</span><span class="p">,</span> <span class="mi">180</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">curve</span><span class="o">=</span><span class="n">curve</span><span class="o">.</span><span class="n">linear</span><span class="p">)</span>   <span class="c1"># любое свойство по имени</span>
+<span class="n">cube</span><span class="o">.</span><span class="n">animate_scale</span><span class="p">(</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="mf">.5</span><span class="p">,</span> <span class="n">curve</span><span class="o">=</span><span class="n">curve</span><span class="o">.</span><span class="n">in_out_sine</span><span class="p">)</span>
+<span class="n">cube</span><span class="o">.</span><span class="n">animate_color</span><span class="p">(</span><span class="n">color</span><span class="o">.</span><span class="n">azure</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="n">app</span><span class="o">.</span><span class="n">run</span><span class="p">()</span></code></pre></figure>
+<p>Последовательность запускает действия одно за другим. <code>Func</code> вызывает функцию, <code>Wait</code> или просто число даёт паузу.</p>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="n">Sequence</span><span class="p">(</span>
+    <span class="n">Func</span><span class="p">(</span><span class="nb">print</span><span class="p">,</span> <span class="s1">&#39;старт&#39;</span><span class="p">),</span>
+    <span class="n">Wait</span><span class="p">(</span><span class="mf">.2</span><span class="p">),</span>
+    <span class="n">Func</span><span class="p">(</span><span class="nb">setattr</span><span class="p">,</span> <span class="n">cube</span><span class="p">,</span> <span class="s1">&#39;color&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">.</span><span class="n">red</span><span class="p">),</span>
+    <span class="mf">.2</span><span class="p">,</span>                                   <span class="c1"># число = пауза в секундах</span>
+    <span class="n">Func</span><span class="p">(</span><span class="nb">print</span><span class="p">,</span> <span class="s1">&#39;конец&#39;</span><span class="p">),</span>
+    <span class="n">loop</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+<span class="c1"># Отложенный вызов одной функции</span>
+<span class="n">invoke</span><span class="p">(</span><span class="nb">print</span><span class="p">,</span> <span class="s1">&#39;через 0.3 сек&#39;</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="mf">.3</span><span class="p">)</span></code></pre></figure>
+<p>Для логики, которая работает каждый кадр, у любого <code>Entity</code> есть метод <code>update()</code>. Умножайте скорость на <code>time.dt</code> (длительность кадра), тогда движение не зависит от FPS.</p>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="k">class</span><span class="w"> </span><span class="nc">Spinner</span><span class="p">(</span><span class="n">Entity</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rotation_y</span> <span class="o">+=</span> <span class="mi">90</span> <span class="o">*</span> <span class="n">time</span><span class="o">.</span><span class="n">dt</span>      <span class="c1"># 90 градусов в секунду</span>
+
+<span class="n">Spinner</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s1">&#39;cube&#39;</span><span class="p">,</span> <span class="n">x</span><span class="o">=-</span><span class="mi">3</span><span class="p">)</span></code></pre></figure>
+<h2 id="2-покадровая-анимация">2. Покадровая анимация<a class="anchor" href="#2-покадровая-анимация" title="Ссылка на раздел">#</a></h2>
+<p><code>FrameAnimation3d('имя')</code> берёт файлы-кадры с общим началом имени (<code>fire_000.obj</code>, <code>fire_001.obj</code>, ...) и по очереди показывает их.</p>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="n">fire</span> <span class="o">=</span> <span class="n">FrameAnimation3d</span><span class="p">(</span><span class="s1">&#39;fire&#39;</span><span class="p">,</span> <span class="n">fps</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">loop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code></pre></figure>
+<p>Для спрайтов есть <code>Animation</code> (gif или набор картинок) и <code>SpriteSheetAnimation</code> (кадры из одной картинки-атласа).</p>
+<p>Класс <code>Animator</code> сам ничего не проигрывает. Он включает один из готовых объектов <code>Entity</code> и выключает остальные. Работает на объектах <code>Entity</code> (спрайты, <code>FrameAnimation3d</code>), но не на <code>Actor</code>.</p>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="n">idle</span> <span class="o">=</span> <span class="n">Entity</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s1">&#39;cube&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="o">.</span><span class="n">green</span><span class="p">,</span> <span class="n">enabled</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">walk</span> <span class="o">=</span> <span class="n">Entity</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s1">&#39;cube&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="o">.</span><span class="n">red</span><span class="p">,</span> <span class="n">enabled</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="n">anim</span> <span class="o">=</span> <span class="n">Animator</span><span class="p">(</span><span class="n">animations</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;idle&#39;</span><span class="p">:</span> <span class="n">idle</span><span class="p">,</span> <span class="s1">&#39;walk&#39;</span><span class="p">:</span> <span class="n">walk</span><span class="p">})</span>
+<span class="n">anim</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="s1">&#39;walk&#39;</span>                          <span class="c1"># walk включён, idle выключен</span></code></pre></figure>
+<h2 id="3-откуда-берётся-скелетная-анимация">3. Откуда берётся скелетная анимация<a class="anchor" href="#3-откуда-берётся-скелетная-анимация" title="Ссылка на раздел">#</a></h2>
+<p>У Ursina своего скелетного движка нет. Его даёт Panda3D, на котором Ursina построен, через класс <code>Actor</code>. Он понимает скелет модели и умеет двигать кости.</p>
+<p>Есть два способа заставить кости двигаться:</p>
+<ol>
+<li><strong>Готовые анимации</strong> (запись движения, сделанная в Blender или скачанная из Mixamo) лежат в <code>.glb</code> и проигрываются командами <code>actor.loop('walk')</code>. Лучший по качеству вариант. Нужны модель и анимации к ней.</li>
+<li><strong>Процедурная анимация</strong>: код сам каждый кадр поворачивает кости по формулам цикла шага. Подходит, когда готовых анимаций нет, но есть скелет.</li>
+</ol>
+<h2 id="4-скелетная-анимация-через-actor">4. Скелетная анимация через Actor<a class="anchor" href="#4-скелетная-анимация-через-actor" title="Ссылка на раздел">#</a></h2>
+<h3 id="41-сначала-проверьте-что-есть-в-модели">4.1. Сначала проверьте, что есть в модели<a class="anchor" href="#41-сначала-проверьте-что-есть-в-модели" title="Ссылка на раздел">#</a></h3>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="kn">from</span><span class="w"> </span><span class="nn">ursina</span><span class="w"> </span><span class="kn">import</span> <span class="n">Ursina</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">direct.actor.Actor</span><span class="w"> </span><span class="kn">import</span> <span class="n">Actor</span>
+<span class="n">app</span> <span class="o">=</span> <span class="n">Ursina</span><span class="p">()</span>
+
+<span class="n">a</span> <span class="o">=</span> <span class="n">Actor</span><span class="p">(</span><span class="s1">&#39;model.glb&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">getAnimNames</span><span class="p">())</span>               <span class="c1"># [] значит, в файле нет анимаций</span>
+<span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">a</span><span class="o">.</span><span class="n">getJoints</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">j</span><span class="o">.</span><span class="n">getName</span><span class="p">())</span>                <span class="c1"># имена костей</span></code></pre></figure>
+<p>Для загрузки <code>.glb</code> нужен пакет <code>panda3d-gltf</code>: <code>pip install panda3d-gltf</code>.</p>
+<h3 id="42-готовые-анимации-персонаж-с-плавным-переходом-между-idle-и-walk">4.2. Готовые анимации: персонаж с плавным переходом между idle и walk<a class="anchor" href="#42-готовые-анимации-персонаж-с-плавным-переходом-между-idle-и-walk" title="Ссылка на раздел">#</a></h3>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="kn">from</span><span class="w"> </span><span class="nn">ursina</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">panda3d.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">NodePath</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">direct.actor.Actor</span><span class="w"> </span><span class="kn">import</span> <span class="n">Actor</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">gltf</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Character</span><span class="p">(</span><span class="n">Entity</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">anims</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;idle&#39;</span><span class="p">,</span> <span class="s1">&#39;walk&#39;</span><span class="p">),</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">settings</span> <span class="o">=</span> <span class="n">gltf</span><span class="o">.</span><span class="n">GltfSettings</span><span class="p">()</span>
+        <span class="n">settings</span><span class="o">.</span><span class="n">no_srgb</span> <span class="o">=</span> <span class="kc">True</span>            <span class="c1"># так Ursina грузит glb сам, иначе цвета тёмные</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">actor</span> <span class="o">=</span> <span class="n">Actor</span><span class="p">(</span><span class="n">NodePath</span><span class="p">(</span><span class="n">gltf</span><span class="o">.</span><span class="n">load_model</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">gltf_settings</span><span class="o">=</span><span class="n">settings</span><span class="p">)))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">actor</span><span class="o">.</span><span class="n">reparentTo</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">actor</span><span class="o">.</span><span class="n">setH</span><span class="p">(</span><span class="mi">180</span><span class="p">)</span>               <span class="c1"># у моей модели лицо смотрит в -Z, у вашей может быть иначе</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">actor</span><span class="o">.</span><span class="n">enableBlend</span><span class="p">()</span>           <span class="c1"># разрешить смешивание анимаций</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">anims</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">actor</span><span class="o">.</span><span class="n">loop</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>          <span class="c1"># запускаем все анимации сразу, а веса задаём ниже</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">weights</span> <span class="o">=</span> <span class="p">{</span><span class="n">n</span><span class="p">:</span> <span class="mf">0.0</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">anims</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target</span> <span class="o">=</span> <span class="n">anims</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">:</span>
+            <span class="n">goal</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">target</span> <span class="k">else</span> <span class="mf">0.0</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">lerp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">name</span><span class="p">],</span> <span class="n">goal</span><span class="p">,</span> <span class="mi">6</span> <span class="o">*</span> <span class="n">time</span><span class="o">.</span><span class="n">dt</span><span class="p">)</span>   <span class="c1"># плавный переход</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">actor</span><span class="o">.</span><span class="n">setControlEffect</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">name</span><span class="p">])</span>
+
+<span class="n">app</span> <span class="o">=</span> <span class="n">Ursina</span><span class="p">()</span>
+<span class="n">npc</span> <span class="o">=</span> <span class="n">Character</span><span class="p">(</span><span class="s1">&#39;soldier_animated.glb&#39;</span><span class="p">)</span>
+<span class="n">npc</span><span class="o">.</span><span class="n">target</span> <span class="o">=</span> <span class="s1">&#39;walk&#39;</span>                        <span class="c1"># NPC плавно переходит от стойки к ходьбе</span>
+<span class="n">app</span><span class="o">.</span><span class="n">run</span><span class="p">()</span></code></pre></figure>
+<p>Остальные команды <code>Actor</code>:</p>
+<ul>
+<li><code>actor.play('attack')</code> играет анимацию один раз.</li>
+<li><code>actor.setPlayRate(1.5, 'walk')</code> ускоряет её.</li>
+<li><code>actor.pose('walk', 10)</code> замораживает на нужном кадре.</li>
+<li><code>Actor('model.glb', {'walk': 'walk.glb', 'idle': 'idle.glb'})</code> берёт анимации из отдельных файлов.</li>
+</ul>
+<p>Имена в <code>loop()</code> берите из <code>getAnimNames()</code>: регистр важен.</p>
+<h3 id="43-движение-npc-по-миру-и-анимация-шагов">4.3. Движение NPC по миру и анимация шагов<a class="anchor" href="#43-движение-npc-по-миру-и-анимация-шагов" title="Ссылка на раздел">#</a></h3>
+<p>Позицию и поворот NPC меняет <code>Entity</code>, а анимация только показывает шаги. Чтобы ноги не скользили, скорость проигрывания подгоняют под скорость движения.</p>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="k">class</span><span class="w"> </span><span class="nc">Npc</span><span class="p">(</span><span class="n">Character</span><span class="p">):</span>
+    <span class="n">speed</span> <span class="o">=</span> <span class="mf">0.0</span>                                   <span class="c1"># м/с, задаёт ИИ</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">position</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">speed</span> <span class="o">*</span> <span class="n">time</span><span class="o">.</span><span class="n">dt</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target</span> <span class="o">=</span> <span class="s1">&#39;walk&#39;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">speed</span> <span class="o">&gt;</span> <span class="mf">0.1</span> <span class="k">else</span> <span class="s1">&#39;idle&#39;</span>
+        <span class="c1"># 1.4 м/с: скорость, под которую записан цикл ходьбы</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">actor</span><span class="o">.</span><span class="n">setPlayRate</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">speed</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)</span> <span class="o">/</span> <span class="mf">1.4</span><span class="p">,</span> <span class="s1">&#39;walk&#39;</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>                          <span class="c1"># плавное смешивание анимаций</span></code></pre></figure>
+<h3 id="44-процедурная-анимация-костей">4.4. Процедурная анимация костей<a class="anchor" href="#44-процедурная-анимация-костей" title="Ссылка на раздел">#</a></h3>
+<p>Если готовых анимаций нет, кости можно двигать самому. <code>controlJoint</code> отдаёт узел, которым задаётся поза кости.</p>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="kn">from</span><span class="w"> </span><span class="nn">panda3d.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">LQuaternionf</span><span class="p">,</span> <span class="n">LVector3f</span>
+
+<span class="n">joint</span> <span class="o">=</span> <span class="n">actor</span><span class="o">.</span><span class="n">controlJoint</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;modelRoot&#39;</span><span class="p">,</span> <span class="s1">&#39;mixamorig:LeftLeg_063&#39;</span><span class="p">)</span>   <span class="c1"># имя из getJoints()</span>
+<span class="n">rest</span> <span class="o">=</span> <span class="n">LQuaternionf</span><span class="p">(</span><span class="n">joint</span><span class="o">.</span><span class="n">getQuat</span><span class="p">())</span>          <span class="c1"># запоминаем позу покоя</span>
+
+<span class="n">q</span> <span class="o">=</span> <span class="n">LQuaternionf</span><span class="p">()</span>
+<span class="n">q</span><span class="o">.</span><span class="n">setFromAxisAngle</span><span class="p">(</span><span class="mi">30</span><span class="p">,</span> <span class="n">LVector3f</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>    <span class="c1"># 30 градусов вокруг оси X кости</span>
+<span class="n">joint</span><span class="o">.</span><span class="n">setQuat</span><span class="p">(</span><span class="n">q</span> <span class="o">*</span> <span class="n">rest</span><span class="p">)</span>                       <span class="c1"># в Panda3D a * b значит: сначала a, потом b</span>
+<span class="n">actor</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>                      <span class="c1"># пересчитать скелет сразу, без отрисовки кадра</span></code></pre></figure>
+<p>Подводный камень: какая локальная ось (X, Y или Z) и с каким знаком даёт «согнуть колено» или «поднять руку», зависит от модели и от версии загрузчика. Поэтому надёжнее один раз откалибровать оси пробными поворотами и смотреть, куда сдвинулась соседняя кость. Так сделано в готовом примере <code>ursina_npc_walk.py</code>: он ходит, бегает и стоит как человек на скелете Mixamo.</p>
+<h2 id="5-требования-к-3d-модели">5. Требования к 3D-модели<a class="anchor" href="#5-требования-к-3d-модели" title="Ссылка на раздел">#</a></h2>
+<h3 id="формат-и-экспорт">Формат и экспорт<a class="anchor" href="#формат-и-экспорт" title="Ссылка на раздел">#</a></h3>
+<ul>
+<li>Лучший вариант: <code>.glb</code> (glTF 2.0) с вложенными текстурами. Из Blender: Export → glTF Binary, включить Animation (все действия), скины и применённые модификаторы.</li>
+<li>Старые <code>.fbx</code> и <code>.dae</code> Panda3D напрямую не читает. Их нужно сконвертировать в glTF, например в Blender.</li>
+</ul>
+<h3 id="скелет-и-меш">Скелет и меш<a class="anchor" href="#скелет-и-меш" title="Ссылка на раздел">#</a></h3>
+<ul>
+<li>Меш привязан к скелету (skin), у каждой вершины до 4 костей с весами.</li>
+<li>Чем меньше костей, тем быстрее. Для десятков NPC хватает 20–60.</li>
+<li>Масштаб и вращение объектов применены (Apply Transforms в Blender).</li>
+<li>Начало координат лучше ставить между стоп, чтобы NPC стоял на земле.</li>
+<li>Для процедурной анимации нужна базовая поза T-pose или A-pose, как у модели солдата.</li>
+</ul>
+<h3 id="анимации">Анимации<a class="anchor" href="#анимации" title="Ссылка на раздел">#</a></h3>
+<ul>
+<li>Анимации лежат внутри файла или в отдельных файлах на том же скелете. В отдельных файлах имена костей должны совпадать точно.</li>
+<li>Дайте анимациям понятные имена (<code>idle</code>, <code>walk</code>, <code>run</code>): под этими именами они появятся в <code>getAnimNames()</code>.</li>
+<li>Движение «на месте» (<em>in place</em>), без смещения таза вперёд. Иначе персонаж будет сам уходить от своей позиции, а шаг не совпадёт с вашей скоростью.</li>
+<li>Ходьбу и бег лучше делать зацикленными: первый кадр равен последнему.</li>
+</ul>
+<h3 id="где-взять-анимации-для-гуманоида">Где взять анимации для гуманоида<a class="anchor" href="#где-взять-анимации-для-гуманоида" title="Ссылка на раздел">#</a></h3>
+<ol>
+<li>В Mixamo загрузите персонажа и скачайте анимации в FBX с опцией <em>In Place</em>.</li>
+<li>В Blender импортируйте их на один скелет и переименуйте действия в <code>idle</code>, <code>walk</code> и так далее. Имена в Panda3D берутся из названий действий.</li>
+<li>Экспортируйте в <code>.glb</code>.</li>
+</ol>
+<blockquote>
+<p><strong>Важно.</strong> Анимации и модель должны быть из одного источника. У модели с Sketchfab кости часто называются с числовыми суффиксами (<code>mixamorig:Hips_01</code>), а в анимациях из Mixamo суффиксов нет, и имена не совпадут.</p>
+</blockquote>
+<h2 id="6-подводные-камни">6. Подводные камни<a class="anchor" href="#6-подводные-камни" title="Ссылка на раздел">#</a></h2>
+<ul>
+<li><strong>Модель лежит на боку или зеркальна.</strong> Загрузчик может отдать модель в другой системе координат, чем у Ursina (Y вверх, +Z вперёд, левосторонняя система). В <code>ursina_npc_walk.py</code> ориентация вычисляется из скелета (вверх, вперёд, лево) и собирается в матрицу.</li>
+<li><strong>Цвета слишком тёмные.</strong> Загружайте через <code>gltf.load_model</code> с <code>no_srgb=True</code>, как в примере 4.2.</li>
+<li><strong>Позы костей не обновляются вне рендера.</strong> Вызов <code>actor.update()</code> без аргумента ничего не пересчитывает, нужен <code>actor.update(force=True)</code>.</li>
+<li><strong>Модель смотрит назад.</strong> Поворот модели зависит от источника файла. В примере выше стоит <code>setH(180)</code> для моей модели; если у вашей лицо смотрит в другую сторону, поправьте угол.</li>
+<li><strong>Имена костей с суффиксами.</strong> Ищите кости по началу имени или регулярным выражением, а не по точному совпадению.</li>
+</ul>
+<h2 id="7-шпаргалка">7. Шпаргалка<a class="anchor" href="#7-шпаргалка" title="Ссылка на раздел">#</a></h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Что нужно</th>
+<th>Команда</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Плавно сдвинуть, повернуть, перекрасить</td>
+<td><code>entity.animate_position(...)</code>, <code>animate('rotation_y', 90, duration=1)</code>, <code>animate_color(...)</code></td>
+</tr>
+<tr>
+<td>Цепочка действий</td>
+<td><code>Sequence(Func(...), Wait(1), ...).start()</code></td>
+</tr>
+<tr>
+<td>Отложенный вызов</td>
+<td><code>invoke(func, arg, delay=1)</code></td>
+</tr>
+<tr>
+<td>Действие каждый кадр</td>
+<td><code>def update(self):</code> с <code>time.dt</code></td>
+</tr>
+<tr>
+<td>Смена кадров</td>
+<td><code>FrameAnimation3d('имя', fps=12)</code></td>
+</tr>
+<tr>
+<td>Переключение состояний у объектов</td>
+<td><code>Animator(animations={...}).state = 'walk'</code></td>
+</tr>
+<tr>
+<td>Узнать анимации и кости модели</td>
+<td><code>actor.getAnimNames()</code>, <code>actor.getJoints()</code></td>
+</tr>
+<tr>
+<td>Запустить анимацию</td>
+<td><code>actor.loop('walk')</code>, <code>actor.play('attack')</code></td>
+</tr>
+<tr>
+<td>Скорость и кадр</td>
+<td><code>actor.setPlayRate(1.5, 'walk')</code>, <code>actor.pose('walk', 10)</code></td>
+</tr>
+<tr>
+<td>Смешать анимации</td>
+<td><code>actor.enableBlend()</code>, <code>actor.setControlEffect('walk', 0.7)</code></td>
+</tr>
+<tr>
+<td>Двигать кость вручную</td>
+<td><code>actor.controlJoint(None, 'modelRoot', 'имя_кости')</code>, затем <code>actor.update(force=True)</code></td>
+</tr>
+</tbody>
+</table></div>
+    </article>
+  </main>
+</div>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var body = document.body;
+
+  /* ---------- Тема ---------- */
+  var themeBtn = document.getElementById('theme');
+  function effectiveTheme() {
+    var t = root.getAttribute('data-theme');
+    if (t) return t;
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  function updateThemeLabel() { themeBtn.textContent = effectiveTheme() === 'dark' ? 'Светлая тема' : 'Тёмная тема'; }
+  themeBtn.hidden = false;
+  updateThemeLabel();
+  themeBtn.addEventListener('click', function () {
+    var next = effectiveTheme() === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('guide-theme', next); } catch (e) {}
+    updateThemeLabel();
+  });
+
+  /* ---------- Копирование кода ---------- */
+  function copyText(text) {
+    if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(text);
+    return new Promise(function (resolve, reject) {
+      var ta = document.createElement('textarea');
+      ta.value = text; ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(ta);
+      ok ? resolve() : reject(new Error('copy failed'));
+    });
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('.code'), function (fig) {
+    var btn = fig.querySelector('.copy');
+    var code = fig.querySelector('pre code');
+    var timer;
+    btn.hidden = false;
+    btn.addEventListener('click', function () {
+      copyText(code.textContent).then(function () {
+        btn.textContent = 'Скопировано'; btn.dataset.state = 'done';
+      }, function () {
+        btn.textContent = 'Не удалось'; btn.dataset.state = 'fail';
+      }).then(function () {
+        clearTimeout(timer);
+        timer = setTimeout(function () { btn.textContent = 'Скопировать'; delete btn.dataset.state; }, 1800);
+      });
+    });
+  });
+
+  /* ---------- Оглавление: подсветка текущего раздела ---------- */
+  var nav = document.getElementById('sidebar');
+  var links = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  var items = links.map(function (a) {
+    return { a: a, h: document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1))) };
+  }).filter(function (x) { return x.h; });
+  var current = null, ticking = false;
+
+  function update() {
+    ticking = false;
+    var line = window.innerWidth <= 960 ? 96 : 80;
+    var found = items.length ? items[0] : null;
+    for (var i = 0; i < items.length; i++) {
+      if (items[i].h.getBoundingClientRect().top <= line) found = items[i]; else break;
+    }
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4 && items.length) {
+      found = items[items.length - 1];
+    }
+    if (!found || found === current) return;
+    if (current) current.a.removeAttribute('aria-current');
+    current = found;
+    current.a.setAttribute('aria-current', 'location');
+    var r = current.a.getBoundingClientRect(), b = nav.getBoundingClientRect();
+    if (r.top < b.top + 60) nav.scrollTop -= (b.top + 60 - r.top);
+    else if (r.bottom > b.bottom - 60) nav.scrollTop += (r.bottom - (b.bottom - 60));
+  }
+  window.addEventListener('scroll', function () {
+    if (!ticking) { ticking = true; requestAnimationFrame(update); }
+  }, { passive: true });
+  window.addEventListener('resize', update);
+  update();
+
+  /* ---------- Мобильное меню ---------- */
+  var menu = document.getElementById('menu');
+  function setNav(open) {
+    body.classList.toggle('nav-open', open);
+    menu.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+  menu.addEventListener('click', function () { setNav(!body.classList.contains('nav-open')); });
+  document.getElementById('backdrop').addEventListener('click', function () { setNav(false); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setNav(false); });
+  links.forEach(function (a) { a.addEventListener('click', function () { setNav(false); }); });
+})();
+</script>
+</body>
+</html>
