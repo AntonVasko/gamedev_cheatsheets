@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Сеть — шпаргалка Ursina</title>
+<link rel="stylesheet" href="style.css">
+<script>
+/* Тема применяется до отрисовки, чтобы страница не мигала */
+try { var t = localStorage.getItem('guide-theme'); if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+</head>
+<body>
+<div class="topbar"><button type="button" id="menu" aria-expanded="false" aria-controls="sidebar">Содержание</button><span>Сеть</span></div>
+<div class="backdrop" id="backdrop"></div>
+<div class="layout">
+<aside class="sidebar" id="sidebar"><p class="brand">Ursina: шпаргалки</p><button type="button" class="theme-toggle" id="theme" hidden>Тёмная тема</button><nav class="toc" aria-label="Содержание"><ul><li><a href="index.html">Оглавление</a></li><li><a href="1-intro.html">1. Введение в Ursina</a></li><li><a href="2-first-program.html">2. Первая программа</a></li><li><a href="3-coordinates.html">3. Система координат</a></li><li><a href="4-collisions.html">4. Столкновения</a></li><li><a href="5-text.html">5. Работа с текстом</a></li><li><a href="6-network.html" aria-current="page">6. Сеть</a><ul><li><a href="#s1">Идея</a></li><li><a href="#s2">Объявление RPC</a></li><li><a href="#s3">Цикл и вызов</a></li><li><a href="#s4">Запуск</a></li><li><a href="#s5">Через интернет</a></li><li><a href="#s6">Примеры из поставки</a></li><li><a href="#s7">Альтернатива</a></li><li><a href="#ex">Пример: готовая программа</a></li><li><a href="#err">Частые ошибки</a></li></ul></li><li><a href="7-build.html">7. Сборка проекта</a></li></ul></nav></aside>
+<main class="main"><article class="prose">
+<header class="hero"><h1>Сеть</h1><p class="lead">Ursina работает по TCP: один участник — хост (сервер), остальные подключаются по IP и порту. Основной инструмент — удалённый вызов функций (RPC).</p></header>
+<h2 id="s1">Идея<a class="anchor" href="#s1" title="Ссылка на раздел">#</a></h2>
+<p>Функцию помечают <code>@rpc(peer)</code> — и её можно вызвать с другого компьютера. Данные упаковываются автоматически.</p>
+<h2 id="s2">Объявление RPC<a class="anchor" href="#s2" title="Ссылка на раздел">#</a></h2>
+<p>Аннотации типов у аргументов <b>обязательны</b>.</p>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="kn">from</span><span class="w"> </span><span class="nn">ursina.networking</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="n">peer</span> <span class="o">=</span> <span class="n">RPCPeer</span><span class="p">()</span>
+
+<span class="nd">@rpc</span><span class="p">(</span><span class="n">peer</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">on_connect</span><span class="p">(</span><span class="n">connection</span><span class="p">,</span> <span class="n">time_connected</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;подключился&#39;</span><span class="p">,</span> <span class="n">peer</span><span class="o">.</span><span class="n">is_hosting</span><span class="p">())</span>
+
+<span class="nd">@rpc</span><span class="p">(</span><span class="n">peer</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">on_disconnect</span><span class="p">(</span><span class="n">connection</span><span class="p">,</span> <span class="n">time_disconnected</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;отключился&#39;</span><span class="p">)</span>
+
+<span class="nd">@rpc</span><span class="p">(</span><span class="n">peer</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">say</span><span class="p">(</span><span class="n">connection</span><span class="p">,</span> <span class="n">time_received</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">message</span><span class="p">)</span></code></pre></figure>
+<h2 id="s3">Цикл и вызов<a class="anchor" href="#s3" title="Ссылка на раздел">#</a></h2>
+<p>Событий сети не будет, пока вы не вызываете <code>peer.update()</code> каждый кадр.</p>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">():</span>
+    <span class="n">peer</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+
+<span class="c1"># вызвать say на другой стороне:</span>
+<span class="n">peer</span><span class="o">.</span><span class="n">say</span><span class="p">(</span><span class="n">peer</span><span class="o">.</span><span class="n">get_connections</span><span class="p">()[</span><span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;Привет!&#39;</span><span class="p">)</span></code></pre></figure>
+<h2 id="s4">Запуск<a class="anchor" href="#s4" title="Ссылка на раздел">#</a></h2>
+<p>Хост — <code>is_host=True</code>, клиент — <code>False</code> и IP хоста.</p>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="n">peer</span><span class="o">.</span><span class="n">start</span><span class="p">(</span><span class="s1">&#39;localhost&#39;</span><span class="p">,</span> <span class="mi">8080</span><span class="p">,</span> <span class="n">is_host</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>    <span class="c1"># хост</span>
+<span class="n">peer</span><span class="o">.</span><span class="n">start</span><span class="p">(</span><span class="s1">&#39;192.168.0.10&#39;</span><span class="p">,</span> <span class="mi">8080</span><span class="p">,</span> <span class="n">is_host</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="c1"># клиент</span></code></pre></figure>
+<h2 id="s5">Через интернет<a class="anchor" href="#s5" title="Ссылка на раздел">#</a></h2>
+<p>Нужен проброс порта на роутере хоста и разрешение в фаерволе. Без этого работает только в локальной сети.</p>
+<h2 id="s6">Примеры из поставки<a class="anchor" href="#s6" title="Ссылка на раздел">#</a></h2>
+<p><code>hello_world.py</code> (низкоуровневый Peer), <code>hello_world_rpc.py</code>, <code>shared_object.py</code>, <code>host_authoritative.py</code>, <code>club_bear.py</code> (полноценная игра).</p>
+<h2 id="s7">Альтернатива<a class="anchor" href="#s7" title="Ссылка на раздел">#</a></h2>
+<p>Сторонняя событийная библиотека <code>ursinanetworking</code> (<code>pip install ursinanetworking</code>): <code>UrsinaNetworkingServer/Client</code>, <code>send_message()</code>, <code>process_net_events()</code>.</p>
+<h2 id="ex">Пример: готовая программа<a class="anchor" href="#ex" title="Ссылка на раздел">#</a></h2>
+<p>Сохраните код как <code>main.py</code> в отдельной папке и запустите.</p>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="c1"># main.py — запуск: «python main.py host» и в другом окне «python main.py»</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ursina</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ursina.networking</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">app</span> <span class="o">=</span> <span class="n">Ursina</span><span class="p">()</span>
+<span class="n">is_host</span> <span class="o">=</span> <span class="s1">&#39;host&#39;</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span>
+<span class="n">window</span><span class="o">.</span><span class="n">title</span> <span class="o">=</span> <span class="s1">&#39;Хост&#39;</span> <span class="k">if</span> <span class="n">is_host</span> <span class="k">else</span> <span class="s1">&#39;Клиент&#39;</span>
+<span class="n">peer</span> <span class="o">=</span> <span class="n">RPCPeer</span><span class="p">()</span>
+
+<span class="n">me</span> <span class="o">=</span> <span class="n">Entity</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s1">&#39;cube&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="o">.</span><span class="n">azure</span><span class="p">)</span>
+<span class="n">other</span> <span class="o">=</span> <span class="n">Entity</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s1">&#39;cube&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="o">.</span><span class="n">orange</span><span class="p">)</span>
+<span class="n">status</span> <span class="o">=</span> <span class="n">Text</span><span class="p">(</span><span class="s1">&#39;ждём подключения…&#39;</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">y</span><span class="o">=</span><span class="mf">.45</span><span class="p">)</span>
+
+<span class="nd">@rpc</span><span class="p">(</span><span class="n">peer</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">on_connect</span><span class="p">(</span><span class="n">connection</span><span class="p">,</span> <span class="n">time_connected</span><span class="p">):</span>
+    <span class="n">status</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="s1">&#39;подключено!&#39;</span>
+
+<span class="nd">@rpc</span><span class="p">(</span><span class="n">peer</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">on_disconnect</span><span class="p">(</span><span class="n">connection</span><span class="p">,</span> <span class="n">time_disconnected</span><span class="p">):</span>
+    <span class="n">status</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="s1">&#39;связь потеряна&#39;</span>
+
+<span class="nd">@rpc</span><span class="p">(</span><span class="n">peer</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">set_pos</span><span class="p">(</span><span class="n">connection</span><span class="p">,</span> <span class="n">time_received</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
+    <span class="n">other</span><span class="o">.</span><span class="n">position</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">():</span>
+    <span class="n">peer</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+    <span class="n">me</span><span class="o">.</span><span class="n">x</span> <span class="o">+=</span> <span class="p">(</span><span class="n">held_keys</span><span class="p">[</span><span class="s1">&#39;d&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">held_keys</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">])</span> <span class="o">*</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">time</span><span class="o">.</span><span class="n">dt</span>
+    <span class="n">me</span><span class="o">.</span><span class="n">y</span> <span class="o">+=</span> <span class="p">(</span><span class="n">held_keys</span><span class="p">[</span><span class="s1">&#39;w&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">held_keys</span><span class="p">[</span><span class="s1">&#39;s&#39;</span><span class="p">])</span> <span class="o">*</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">time</span><span class="o">.</span><span class="n">dt</span>
+    <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">peer</span><span class="o">.</span><span class="n">get_connections</span><span class="p">():</span>
+        <span class="n">peer</span><span class="o">.</span><span class="n">set_pos</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">me</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">me</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>      <span class="c1"># оранжевый куб у соперника повторяет ваш</span>
+
+<span class="n">peer</span><span class="o">.</span><span class="n">start</span><span class="p">(</span><span class="s1">&#39;localhost&#39;</span><span class="p">,</span> <span class="mi">8080</span><span class="p">,</span> <span class="n">is_host</span><span class="o">=</span><span class="n">is_host</span><span class="p">)</span>
+<span class="n">app</span><span class="o">.</span><span class="n">run</span><span class="p">()</span></code></pre></figure>
+<h2 id="err">Частые ошибки<a class="anchor" href="#err" title="Ссылка на раздел">#</a></h2>
+<ul><li>Нет аннотации типа у аргумента RPC — вызов не сработает.</li><li>Не вызывали <code>peer.update()</code> — ни подключений, ни сообщений.</li><li>Клиент запущен раньше хоста или порт занят/закрыт фаерволом — подключения не будет.</li><li>Слать позицию каждый кадр — только для демо; в игре ограничьте частоту.</li></ul>
+<div class="pn"><a href="5-text.html">← Работа с текстом</a><a href="7-build.html">Сборка проекта →</a></div>
+</article></main>
+</div>
+<script>
+(function () {
+  var root = document.documentElement;
+  var body = document.body;
+
+  /* ---------- Тема ---------- */
+  var themeBtn = document.getElementById('theme');
+  function effectiveTheme() {
+    var t = root.getAttribute('data-theme');
+    if (t) return t;
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  function updateThemeLabel() { themeBtn.textContent = effectiveTheme() === 'dark' ? 'Светлая тема' : 'Тёмная тема'; }
+  themeBtn.hidden = false;
+  updateThemeLabel();
+  themeBtn.addEventListener('click', function () {
+    var next = effectiveTheme() === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('guide-theme', next); } catch (e) {}
+    updateThemeLabel();
+  });
+
+  /* ---------- Копирование кода ---------- */
+  function copyText(text) {
+    if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(text);
+    return new Promise(function (resolve, reject) {
+      var ta = document.createElement('textarea');
+      ta.value = text; ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(ta);
+      ok ? resolve() : reject(new Error('copy failed'));
+    });
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('.code'), function (fig) {
+    var btn = fig.querySelector('.copy');
+    var code = fig.querySelector('pre code');
+    var timer;
+    btn.hidden = false;
+    btn.addEventListener('click', function () {
+      copyText(code.textContent).then(function () {
+        btn.textContent = 'Скопировано'; btn.dataset.state = 'done';
+      }, function () {
+        btn.textContent = 'Не удалось'; btn.dataset.state = 'fail';
+      }).then(function () {
+        clearTimeout(timer);
+        timer = setTimeout(function () { btn.textContent = 'Скопировать'; delete btn.dataset.state; }, 1800);
+      });
+    });
+  });
+
+  /* ---------- Оглавление: подсветка текущего раздела ---------- */
+  var nav = document.getElementById('sidebar');
+  var links = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  var items = links.map(function (a) {
+    return { a: a, h: document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1))) };
+  }).filter(function (x) { return x.h; });
+  var current = null, ticking = false;
+
+  function update() {
+    ticking = false;
+    var line = window.innerWidth <= 960 ? 96 : 80;
+    var found = items.length ? items[0] : null;
+    for (var i = 0; i < items.length; i++) {
+      if (items[i].h.getBoundingClientRect().top <= line) found = items[i]; else break;
+    }
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4 && items.length) {
+      found = items[items.length - 1];
+    }
+    if (!found || found === current) return;
+    if (current) current.a.removeAttribute('aria-current');
+    current = found;
+    current.a.setAttribute('aria-current', 'location');
+    var r = current.a.getBoundingClientRect(), b = nav.getBoundingClientRect();
+    if (r.top < b.top + 60) nav.scrollTop -= (b.top + 60 - r.top);
+    else if (r.bottom > b.bottom - 60) nav.scrollTop += (r.bottom - (b.bottom - 60));
+  }
+  window.addEventListener('scroll', function () {
+    if (!ticking) { ticking = true; requestAnimationFrame(update); }
+  }, { passive: true });
+  window.addEventListener('resize', update);
+  update();
+
+  /* ---------- Мобильное меню ---------- */
+  var menu = document.getElementById('menu');
+  function setNav(open) {
+    body.classList.toggle('nav-open', open);
+    menu.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+  menu.addEventListener('click', function () { setNav(!body.classList.contains('nav-open')); });
+  document.getElementById('backdrop').addEventListener('click', function () { setNav(false); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setNav(false); });
+  links.forEach(function (a) { a.addEventListener('click', function () { setNav(false); }); });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Первая программа — шпаргалка Ursina</title>
+<link rel="stylesheet" href="style.css">
+<script>
+/* Тема применяется до отрисовки, чтобы страница не мигала */
+try { var t = localStorage.getItem('guide-theme'); if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+</head>
+<body>
+<div class="topbar"><button type="button" id="menu" aria-expanded="false" aria-controls="sidebar">Содержание</button><span>Первая программа</span></div>
+<div class="backdrop" id="backdrop"></div>
+<div class="layout">
+<aside class="sidebar" id="sidebar"><p class="brand">Ursina: шпаргалки</p><button type="button" class="theme-toggle" id="theme" hidden>Тёмная тема</button><nav class="toc" aria-label="Содержание"><ul><li><a href="index.html">Оглавление</a></li><li><a href="1-intro.html">1. Введение в Ursina</a></li><li><a href="2-first-program.html" aria-current="page">2. Первая программа</a><ul><li><a href="#s1">Добавление объектов</a></li><li><a href="#s2">Настройка</a></li><li><a href="#s3">Модель</a></li><li><a href="#s4">Текстура</a></li><li><a href="#s5">Цвет</a></li><li><a href="#s6">Положение</a></li><li><a href="#s7">Вращение</a></li><li><a href="#s8">Масштабирование</a></li><li><a href="#s9">Обновление</a></li><li><a href="#s10">События клавиатуры</a></li><li><a href="#s11">События мыши</a></li><li><a href="#s12">Другие «волшебные» функции</a></li><li><a href="#ex">Пример: готовая программа</a></li><li><a href="#err">Частые ошибки</a></li></ul></li><li><a href="3-coordinates.html">3. Система координат</a></li><li><a href="4-collisions.html">4. Столкновения</a></li><li><a href="5-text.html">5. Работа с текстом</a></li><li><a href="6-network.html">6. Сеть</a></li><li><a href="7-build.html">7. Сборка проекта</a></li></ul></nav></aside>
+<main class="main"><article class="prose">
+<header class="hero"><h1>Первая программа</h1><p class="lead">Entity — основа всего: любой предмет сцены. Разбираем, как создать объект и оживить его.</p></header>
+<h2 id="s1">Добавление объектов<a class="anchor" href="#s1" title="Ссылка на раздел">#</a></h2>
+<p>Создали <code>Entity</code> — он сразу в сцене. Для своих типов наследуйтесь.</p>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="n">player</span> <span class="o">=</span> <span class="n">Entity</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s1">&#39;cube&#39;</span><span class="p">)</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Enemy</span><span class="p">(</span><span class="n">Entity</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s1">&#39;sphere&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="o">.</span><span class="n">red</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">)</span>
+
+<span class="n">Enemy</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span></code></pre></figure>
+<h2 id="s2">Настройка<a class="anchor" href="#s2" title="Ссылка на раздел">#</a></h2>
+<p>Окно настраивается через <code>window</code>.</p>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="n">window</span><span class="o">.</span><span class="n">title</span> <span class="o">=</span> <span class="s1">&#39;Моя игра&#39;</span>
+<span class="n">window</span><span class="o">.</span><span class="n">borderless</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="n">window</span><span class="o">.</span><span class="n">fullscreen</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="n">window</span><span class="o">.</span><span class="n">color</span> <span class="o">=</span> <span class="n">color</span><span class="o">.</span><span class="n">black</span>
+<span class="n">window</span><span class="o">.</span><span class="n">fps_counter</span><span class="o">.</span><span class="n">enabled</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="n">window</span><span class="o">.</span><span class="n">exit_button</span><span class="o">.</span><span class="n">visible</span> <span class="o">=</span> <span class="kc">False</span></code></pre></figure>
+<h2 id="s3">Модель<a class="anchor" href="#s3" title="Ссылка на раздел">#</a></h2>
+<p>Встроенные: cube, sphere, quad, plane, circle, diamond. Свои — .obj/.glb из проекта.</p>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="n">Entity</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s1">&#39;sphere&#39;</span><span class="p">)</span>
+<span class="n">Entity</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s1">&#39;ship&#39;</span><span class="p">)</span>      <span class="c1"># assets/ship.obj</span></code></pre></figure>
+<h2 id="s4">Текстура<a class="anchor" href="#s4" title="Ссылка на раздел">#</a></h2>
+<p>Встроенная (brick, grass…) или своя картинка.</p>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="n">Entity</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s1">&#39;cube&#39;</span><span class="p">,</span> <span class="n">texture</span><span class="o">=</span><span class="s1">&#39;brick&#39;</span><span class="p">)</span>
+<span class="n">Entity</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s1">&#39;quad&#39;</span><span class="p">,</span> <span class="n">texture</span><span class="o">=</span><span class="s1">&#39;wall.png&#39;</span><span class="p">,</span> <span class="n">texture_scale</span><span class="o">=</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span></code></pre></figure>
+<h2 id="s5">Цвет<a class="anchor" href="#s5" title="Ссылка на раздел">#</a></h2>
+<p>Цвет умножается на текстуру.</p>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="n">Entity</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s1">&#39;cube&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="o">.</span><span class="n">red</span><span class="p">)</span>
+<span class="n">e</span> <span class="o">=</span> <span class="n">Entity</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s1">&#39;cube&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="o">.</span><span class="n">hex</span><span class="p">(</span><span class="s1">&#39;#ff8800&#39;</span><span class="p">))</span>
+<span class="n">e</span><span class="o">.</span><span class="n">color</span> <span class="o">=</span> <span class="n">color</span><span class="o">.</span><span class="n">random_color</span><span class="p">()</span></code></pre></figure>
+<h2 id="s6">Положение<a class="anchor" href="#s6" title="Ссылка на раздел">#</a></h2>
+<p>Позиция — <code>(x, y, z)</code>. Можно менять по осям отдельно.</p>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="n">Entity</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s1">&#39;cube&#39;</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+<span class="n">e</span><span class="o">.</span><span class="n">x</span> <span class="o">+=</span> <span class="mi">1</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">world_position</span><span class="p">)</span></code></pre></figure>
+<h2 id="s7">Вращение<a class="anchor" href="#s7" title="Ссылка на раздел">#</a></h2>
+<p>Углы в градусах по осям x, y, z.</p>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="n">e</span><span class="o">.</span><span class="n">rotation</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">45</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">e</span><span class="o">.</span><span class="n">rotation_y</span> <span class="o">+=</span> <span class="mi">90</span> <span class="o">*</span> <span class="n">time</span><span class="o">.</span><span class="n">dt</span>
+<span class="n">e</span><span class="o">.</span><span class="n">look_at</span><span class="p">(</span><span class="n">player</span><span class="p">)</span></code></pre></figure>
+<h2 id="s8">Масштабирование<a class="anchor" href="#s8" title="Ссылка на раздел">#</a></h2>
+<p>Одно число — равномерно, тройка — по осям.</p>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="n">e</span><span class="o">.</span><span class="n">scale</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">e</span><span class="o">.</span><span class="n">scale</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">e</span><span class="o">.</span><span class="n">scale_y</span> <span class="o">=</span> <span class="mf">0.5</span></code></pre></figure>
+<h2 id="s9">Обновление<a class="anchor" href="#s9" title="Ссылка на раздел">#</a></h2>
+<p><code>update()</code> вызывается каждый кадр. Умножайте на <code>time.dt</code>, чтобы скорость не зависела от FPS.</p>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">():</span>
+    <span class="n">player</span><span class="o">.</span><span class="n">x</span> <span class="o">+=</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">time</span><span class="o">.</span><span class="n">dt</span></code></pre></figure>
+<h2 id="s10">События клавиатуры<a class="anchor" href="#s10" title="Ссылка на раздел">#</a></h2>
+<p><code>input(key)</code> — на нажатие; <code>held_keys</code> — пока клавиша зажата.</p>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="k">def</span><span class="w"> </span><span class="nf">input</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s1">&#39;space&#39;</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;прыжок&#39;</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">():</span>
+    <span class="n">player</span><span class="o">.</span><span class="n">x</span> <span class="o">+=</span> <span class="n">held_keys</span><span class="p">[</span><span class="s1">&#39;d&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">time</span><span class="o">.</span><span class="n">dt</span></code></pre></figure>
+<h2 id="s11">События мыши<a class="anchor" href="#s11" title="Ссылка на раздел">#</a></h2>
+<p>Для <code>on_click</code> объекту нужен коллайдер.</p>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="n">box</span> <span class="o">=</span> <span class="n">Entity</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s1">&#39;cube&#39;</span><span class="p">,</span> <span class="n">collider</span><span class="o">=</span><span class="s1">&#39;box&#39;</span><span class="p">)</span>
+<span class="n">box</span><span class="o">.</span><span class="n">on_click</span> <span class="o">=</span> <span class="k">lambda</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;клик!&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">mouse</span><span class="o">.</span><span class="n">position</span><span class="p">,</span> <span class="n">mouse</span><span class="o">.</span><span class="n">hovered_entity</span><span class="p">)</span></code></pre></figure>
+<h2 id="s12">Другие «волшебные» функции<a class="anchor" href="#s12" title="Ссылка на раздел">#</a></h2>
+<p>Методы у Entity вызываются движком сами; плюс удобные помощники.</p>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="k">class</span><span class="w"> </span><span class="nc">Door</span><span class="p">(</span><span class="n">Entity</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_mouse_enter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">color</span> <span class="o">=</span> <span class="n">color</span><span class="o">.</span><span class="n">yellow</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_mouse_exit</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>  <span class="bp">self</span><span class="o">.</span><span class="n">color</span> <span class="o">=</span> <span class="n">color</span><span class="o">.</span><span class="n">white</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_double_click</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="n">destroy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_enable</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;включён&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_disable</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;выключен&#39;</span><span class="p">)</span>
+
+<span class="n">invoke</span><span class="p">(</span><span class="nb">print</span><span class="p">,</span> <span class="s1">&#39;через 2 секунды&#39;</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">player</span><span class="o">.</span><span class="n">animate_y</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="mf">.3</span><span class="p">)</span></code></pre></figure>
+<h2 id="ex">Пример: готовая программа<a class="anchor" href="#ex" title="Ссылка на раздел">#</a></h2>
+<p>Сохраните код как <code>main.py</code> в отдельной папке и запустите.</p>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="kn">from</span><span class="w"> </span><span class="nn">ursina</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">app</span> <span class="o">=</span> <span class="n">Ursina</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Первая программа&#39;</span><span class="p">)</span>
+
+<span class="n">ground</span> <span class="o">=</span> <span class="n">Entity</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s1">&#39;plane&#39;</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">texture</span><span class="o">=</span><span class="s1">&#39;grass&#39;</span><span class="p">,</span> <span class="n">collider</span><span class="o">=</span><span class="s1">&#39;box&#39;</span><span class="p">)</span>
+<span class="n">player</span> <span class="o">=</span> <span class="n">Entity</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s1">&#39;cube&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="o">.</span><span class="n">azure</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">.5</span><span class="p">,</span> <span class="n">collider</span><span class="o">=</span><span class="s1">&#39;box&#39;</span><span class="p">)</span>
+<span class="n">box</span> <span class="o">=</span> <span class="n">Entity</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s1">&#39;cube&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="o">.</span><span class="n">orange</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mf">.5</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">collider</span><span class="o">=</span><span class="s1">&#39;box&#39;</span><span class="p">)</span>
+<span class="n">camera</span><span class="o">.</span><span class="n">position</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="o">-</span><span class="mi">20</span><span class="p">)</span>
+<span class="n">camera</span><span class="o">.</span><span class="n">rotation_x</span> <span class="o">=</span> <span class="mi">25</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">():</span>
+    <span class="n">player</span><span class="o">.</span><span class="n">x</span> <span class="o">+=</span> <span class="p">(</span><span class="n">held_keys</span><span class="p">[</span><span class="s1">&#39;d&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">held_keys</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">])</span> <span class="o">*</span> <span class="mi">5</span> <span class="o">*</span> <span class="n">time</span><span class="o">.</span><span class="n">dt</span>
+    <span class="n">player</span><span class="o">.</span><span class="n">z</span> <span class="o">+=</span> <span class="p">(</span><span class="n">held_keys</span><span class="p">[</span><span class="s1">&#39;w&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">held_keys</span><span class="p">[</span><span class="s1">&#39;s&#39;</span><span class="p">])</span> <span class="o">*</span> <span class="mi">5</span> <span class="o">*</span> <span class="n">time</span><span class="o">.</span><span class="n">dt</span>
+    <span class="n">box</span><span class="o">.</span><span class="n">rotation_y</span> <span class="o">+=</span> <span class="mi">40</span> <span class="o">*</span> <span class="n">time</span><span class="o">.</span><span class="n">dt</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">input</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s1">&#39;space&#39;</span><span class="p">:</span>
+        <span class="n">player</span><span class="o">.</span><span class="n">animate_y</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="mf">.2</span><span class="p">,</span> <span class="n">curve</span><span class="o">=</span><span class="n">curve</span><span class="o">.</span><span class="n">out_quad</span><span class="p">)</span>
+        <span class="n">player</span><span class="o">.</span><span class="n">animate_y</span><span class="p">(</span><span class="mf">.5</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="mf">.2</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="mf">.2</span><span class="p">,</span> <span class="n">curve</span><span class="o">=</span><span class="n">curve</span><span class="o">.</span><span class="n">in_quad</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s1">&#39;escape&#39;</span><span class="p">:</span>
+        <span class="n">application</span><span class="o">.</span><span class="n">quit</span><span class="p">()</span>
+
+<span class="n">box</span><span class="o">.</span><span class="n">on_click</span> <span class="o">=</span> <span class="k">lambda</span><span class="p">:</span> <span class="nb">setattr</span><span class="p">(</span><span class="n">box</span><span class="p">,</span> <span class="s1">&#39;color&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">.</span><span class="n">random_color</span><span class="p">())</span>
+
+<span class="n">app</span><span class="o">.</span><span class="n">run</span><span class="p">()</span></code></pre></figure>
+<h2 id="err">Частые ошибки<a class="anchor" href="#err" title="Ссылка на раздел">#</a></h2>
+<ul><li>Двигайте объекты через <code>time.dt</code> — иначе на быстром ПК всё будет «летать».</li><li><code>on_click</code> и <code>mouse.hovered_entity</code> не работают без <code>collider</code>.</li><li><code>update</code> и <code>input</code> вне класса — глобальные; внутри Entity это методы <code>self</code>.</li></ul>
+<div class="pn"><a href="1-intro.html">← Введение в Ursina</a><a href="3-coordinates.html">Система координат →</a></div>
+</article></main>
+</div>
+<script>
+(function () {
+  var root = document.documentElement;
+  var body = document.body;
+
+  /* ---------- Тема ---------- */
+  var themeBtn = document.getElementById('theme');
+  function effectiveTheme() {
+    var t = root.getAttribute('data-theme');
+    if (t) return t;
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  function updateThemeLabel() { themeBtn.textContent = effectiveTheme() === 'dark' ? 'Светлая тема' : 'Тёмная тема'; }
+  themeBtn.hidden = false;
+  updateThemeLabel();
+  themeBtn.addEventListener('click', function () {
+    var next = effectiveTheme() === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('guide-theme', next); } catch (e) {}
+    updateThemeLabel();
+  });
+
+  /* ---------- Копирование кода ---------- */
+  function copyText(text) {
+    if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(text);
+    return new Promise(function (resolve, reject) {
+      var ta = document.createElement('textarea');
+      ta.value = text; ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(ta);
+      ok ? resolve() : reject(new Error('copy failed'));
+    });
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('.code'), function (fig) {
+    var btn = fig.querySelector('.copy');
+    var code = fig.querySelector('pre code');
+    var timer;
+    btn.hidden = false;
+    btn.addEventListener('click', function () {
+      copyText(code.textContent).then(function () {
+        btn.textContent = 'Скопировано'; btn.dataset.state = 'done';
+      }, function () {
+        btn.textContent = 'Не удалось'; btn.dataset.state = 'fail';
+      }).then(function () {
+        clearTimeout(timer);
+        timer = setTimeout(function () { btn.textContent = 'Скопировать'; delete btn.dataset.state; }, 1800);
+      });
+    });
+  });
+
+  /* ---------- Оглавление: подсветка текущего раздела ---------- */
+  var nav = document.getElementById('sidebar');
+  var links = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  var items = links.map(function (a) {
+    return { a: a, h: document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1))) };
+  }).filter(function (x) { return x.h; });
+  var current = null, ticking = false;
+
+  function update() {
+    ticking = false;
+    var line = window.innerWidth <= 960 ? 96 : 80;
+    var found = items.length ? items[0] : null;
+    for (var i = 0; i < items.length; i++) {
+      if (items[i].h.getBoundingClientRect().top <= line) found = items[i]; else break;
+    }
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4 && items.length) {
+      found = items[items.length - 1];
+    }
+    if (!found || found === current) return;
+    if (current) current.a.removeAttribute('aria-current');
+    current = found;
+    current.a.setAttribute('aria-current', 'location');
+    var r = current.a.getBoundingClientRect(), b = nav.getBoundingClientRect();
+    if (r.top < b.top + 60) nav.scrollTop -= (b.top + 60 - r.top);
+    else if (r.bottom > b.bottom - 60) nav.scrollTop += (r.bottom - (b.bottom - 60));
+  }
+  window.addEventListener('scroll', function () {
+    if (!ticking) { ticking = true; requestAnimationFrame(update); }
+  }, { passive: true });
+  window.addEventListener('resize', update);
+  update();
+
+  /* ---------- Мобильное меню ---------- */
+  var menu = document.getElementById('menu');
+  function setNav(open) {
+    body.classList.toggle('nav-open', open);
+    menu.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+  menu.addEventListener('click', function () { setNav(!body.classList.contains('nav-open')); });
+  document.getElementById('backdrop').addEventListener('click', function () { setNav(false); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setNav(false); });
+  links.forEach(function (a) { a.addEventListener('click', function () { setNav(false); }); });
+})();
+</script>
+</body>
+</html>

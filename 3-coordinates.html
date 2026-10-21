@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Система координат — шпаргалка Ursina</title>
+<link rel="stylesheet" href="style.css">
+<script>
+/* Тема применяется до отрисовки, чтобы страница не мигала */
+try { var t = localStorage.getItem('guide-theme'); if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+</head>
+<body>
+<div class="topbar"><button type="button" id="menu" aria-expanded="false" aria-controls="sidebar">Содержание</button><span>Система координат</span></div>
+<div class="backdrop" id="backdrop"></div>
+<div class="layout">
+<aside class="sidebar" id="sidebar"><p class="brand">Ursina: шпаргалки</p><button type="button" class="theme-toggle" id="theme" hidden>Тёмная тема</button><nav class="toc" aria-label="Содержание"><ul><li><a href="index.html">Оглавление</a></li><li><a href="1-intro.html">1. Введение в Ursina</a></li><li><a href="2-first-program.html">2. Первая программа</a></li><li><a href="3-coordinates.html" aria-current="page">3. Система координат</a><ul><li><a href="#s1">Координаты объекта</a></li><li><a href="#s2">Локальные и мировые</a></li><li><a href="#s3">Координаты интерфейса</a></li><li><a href="#s4">Вращение</a></li><li><a href="#s5">Начало координат (origin)</a></li><li><a href="#ex">Пример: готовая программа</a></li><li><a href="#err">Частые ошибки</a></li></ul></li><li><a href="4-collisions.html">4. Столкновения</a></li><li><a href="5-text.html">5. Работа с текстом</a></li><li><a href="6-network.html">6. Сеть</a></li><li><a href="7-build.html">7. Сборка проекта</a></li></ul></nav></aside>
+<main class="main"><article class="prose">
+<header class="hero"><h1>Система координат</h1><p class="lead">Две системы: мировая (3D-сцена) и интерфейсная (<code>camera.ui</code>). Плюс вращение и точка начала координат объекта.</p></header>
+<h2 id="s1">Координаты объекта<a class="anchor" href="#s1" title="Ссылка на раздел">#</a></h2>
+<p>x — вправо, y — вверх, z — вглубь экрана.</p>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="n">Entity</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s1">&#39;cube&#39;</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+<span class="n">v</span> <span class="o">=</span> <span class="n">Vec3</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span></code></pre></figure>
+<h2 id="s2">Локальные и мировые<a class="anchor" href="#s2" title="Ссылка на раздел">#</a></h2>
+<p>У дочернего Entity <code>position</code> считается от родителя, <code>world_position</code> — в сцене.</p>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="n">parent</span> <span class="o">=</span> <span class="n">Entity</span><span class="p">(</span><span class="n">position</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+<span class="n">child</span> <span class="o">=</span> <span class="n">Entity</span><span class="p">(</span><span class="n">parent</span><span class="o">=</span><span class="n">parent</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">child</span><span class="o">.</span><span class="n">position</span><span class="p">,</span> <span class="n">child</span><span class="o">.</span><span class="n">world_position</span><span class="p">)</span>   <span class="c1"># (2,0,0) (7,0,0)</span></code></pre></figure>
+<h2 id="s3">Координаты интерфейса<a class="anchor" href="#s3" title="Ссылка на раздел">#</a></h2>
+<p>Всё с <code>parent=camera.ui</code>: центр экрана (0, 0), высота экрана = 1, по x — ±0.5 × <code>window.aspect_ratio</code>.</p>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="n">Entity</span><span class="p">(</span><span class="n">parent</span><span class="o">=</span><span class="n">camera</span><span class="o">.</span><span class="n">ui</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="s1">&#39;quad&#39;</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="p">(</span><span class="mf">.2</span><span class="p">,</span> <span class="mf">.1</span><span class="p">),</span>
+       <span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">.5</span><span class="p">,</span> <span class="mf">.5</span><span class="p">),</span> <span class="n">position</span><span class="o">=</span><span class="n">window</span><span class="o">.</span><span class="n">top_left</span><span class="p">)</span>
+<span class="c1"># window.top_left, top_right, bottom_left, bottom_right</span></code></pre></figure>
+<h2 id="s4">Вращение<a class="anchor" href="#s4" title="Ссылка на раздел">#</a></h2>
+<p>Градусы вокруг осей. Направления <code>forward, back, left, right, up, down</code> зависят от поворота объекта.</p>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="n">e</span><span class="o">.</span><span class="n">rotation</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">90</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">e</span><span class="o">.</span><span class="n">position</span> <span class="o">+=</span> <span class="n">e</span><span class="o">.</span><span class="n">forward</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">time</span><span class="o">.</span><span class="n">dt</span>
+<span class="n">e</span><span class="o">.</span><span class="n">look_at</span><span class="p">(</span><span class="n">target</span><span class="p">)</span></code></pre></figure>
+<h2 id="s5">Начало координат (origin)<a class="anchor" href="#s5" title="Ссылка на раздел">#</a></h2>
+<p>Точка, от которой объект позиционируется, вращается и масштабируется. По умолчанию — центр.</p>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="n">Entity</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s1">&#39;cube&#39;</span><span class="p">,</span> <span class="n">origin_y</span><span class="o">=-</span><span class="mf">.5</span><span class="p">)</span>     <span class="c1"># стоит на «земле»</span>
+<span class="n">Entity</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s1">&#39;quad&#39;</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">.5</span><span class="p">,</span> <span class="mf">.5</span><span class="p">))</span> <span class="c1"># левый верхний угол</span></code></pre></figure>
+<h2 id="ex">Пример: готовая программа<a class="anchor" href="#ex" title="Ссылка на раздел">#</a></h2>
+<p>Сохраните код как <code>main.py</code> в отдельной папке и запустите.</p>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="kn">from</span><span class="w"> </span><span class="nn">ursina</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">app</span> <span class="o">=</span> <span class="n">Ursina</span><span class="p">()</span>
+
+<span class="n">Entity</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s1">&#39;plane&#39;</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="o">.</span><span class="n">dark_gray</span><span class="p">)</span>
+<span class="n">cube</span> <span class="o">=</span> <span class="n">Entity</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s1">&#39;cube&#39;</span><span class="p">,</span> <span class="n">origin_y</span><span class="o">=-</span><span class="mf">.5</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="o">.</span><span class="n">azure</span><span class="p">)</span>   <span class="c1"># низ куба в y=0</span>
+
+<span class="n">pivot</span> <span class="o">=</span> <span class="n">Entity</span><span class="p">()</span>                                               <span class="c1"># центр вращения</span>
+<span class="n">planet</span> <span class="o">=</span> <span class="n">Entity</span><span class="p">(</span><span class="n">parent</span><span class="o">=</span><span class="n">pivot</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="s1">&#39;sphere&#39;</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="o">.</span><span class="n">orange</span><span class="p">)</span>
+
+<span class="n">Text</span><span class="p">(</span><span class="s1">&#39;x - вправо, y - вверх, z - вглубь&#39;</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">.5</span><span class="p">,</span> <span class="mf">.5</span><span class="p">),</span> <span class="n">position</span><span class="o">=</span><span class="n">window</span><span class="o">.</span><span class="n">top_left</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">():</span>
+    <span class="n">pivot</span><span class="o">.</span><span class="n">rotation_y</span> <span class="o">+=</span> <span class="mi">50</span> <span class="o">*</span> <span class="n">time</span><span class="o">.</span><span class="n">dt</span>     <span class="c1"># планета ездит по кругу вокруг куба</span>
+
+<span class="n">EditorCamera</span><span class="p">()</span>
+<span class="n">app</span><span class="o">.</span><span class="n">run</span><span class="p">()</span></code></pre></figure>
+<h2 id="err">Частые ошибки<a class="anchor" href="#err" title="Ссылка на раздел">#</a></h2>
+<ul><li>Путаница между <code>position</code> и <code>world_position</code> у дочерних объектов.</li><li>Для UI забыли <code>parent=camera.ui</code> — объект окажется в 3D-сцене.</li></ul>
+<div class="pn"><a href="2-first-program.html">← Первая программа</a><a href="4-collisions.html">Столкновения →</a></div>
+</article></main>
+</div>
+<script>
+(function () {
+  var root = document.documentElement;
+  var body = document.body;
+
+  /* ---------- Тема ---------- */
+  var themeBtn = document.getElementById('theme');
+  function effectiveTheme() {
+    var t = root.getAttribute('data-theme');
+    if (t) return t;
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  function updateThemeLabel() { themeBtn.textContent = effectiveTheme() === 'dark' ? 'Светлая тема' : 'Тёмная тема'; }
+  themeBtn.hidden = false;
+  updateThemeLabel();
+  themeBtn.addEventListener('click', function () {
+    var next = effectiveTheme() === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('guide-theme', next); } catch (e) {}
+    updateThemeLabel();
+  });
+
+  /* ---------- Копирование кода ---------- */
+  function copyText(text) {
+    if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(text);
+    return new Promise(function (resolve, reject) {
+      var ta = document.createElement('textarea');
+      ta.value = text; ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(ta);
+      ok ? resolve() : reject(new Error('copy failed'));
+    });
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('.code'), function (fig) {
+    var btn = fig.querySelector('.copy');
+    var code = fig.querySelector('pre code');
+    var timer;
+    btn.hidden = false;
+    btn.addEventListener('click', function () {
+      copyText(code.textContent).then(function () {
+        btn.textContent = 'Скопировано'; btn.dataset.state = 'done';
+      }, function () {
+        btn.textContent = 'Не удалось'; btn.dataset.state = 'fail';
+      }).then(function () {
+        clearTimeout(timer);
+        timer = setTimeout(function () { btn.textContent = 'Скопировать'; delete btn.dataset.state; }, 1800);
+      });
+    });
+  });
+
+  /* ---------- Оглавление: подсветка текущего раздела ---------- */
+  var nav = document.getElementById('sidebar');
+  var links = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  var items = links.map(function (a) {
+    return { a: a, h: document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1))) };
+  }).filter(function (x) { return x.h; });
+  var current = null, ticking = false;
+
+  function update() {
+    ticking = false;
+    var line = window.innerWidth <= 960 ? 96 : 80;
+    var found = items.length ? items[0] : null;
+    for (var i = 0; i < items.length; i++) {
+      if (items[i].h.getBoundingClientRect().top <= line) found = items[i]; else break;
+    }
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4 && items.length) {
+      found = items[items.length - 1];
+    }
+    if (!found || found === current) return;
+    if (current) current.a.removeAttribute('aria-current');
+    current = found;
+    current.a.setAttribute('aria-current', 'location');
+    var r = current.a.getBoundingClientRect(), b = nav.getBoundingClientRect();
+    if (r.top < b.top + 60) nav.scrollTop -= (b.top + 60 - r.top);
+    else if (r.bottom > b.bottom - 60) nav.scrollTop += (r.bottom - (b.bottom - 60));
+  }
+  window.addEventListener('scroll', function () {
+    if (!ticking) { ticking = true; requestAnimationFrame(update); }
+  }, { passive: true });
+  window.addEventListener('resize', update);
+  update();
+
+  /* ---------- Мобильное меню ---------- */
+  var menu = document.getElementById('menu');
+  function setNav(open) {
+    body.classList.toggle('nav-open', open);
+    menu.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+  menu.addEventListener('click', function () { setNav(!body.classList.contains('nav-open')); });
+  document.getElementById('backdrop').addEventListener('click', function () { setNav(false); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setNav(false); });
+  links.forEach(function (a) { a.addEventListener('click', function () { setNav(false); }); });
+})();
+</script>
+</body>
+</html>

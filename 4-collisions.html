@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Столкновения — шпаргалка Ursina</title>
+<link rel="stylesheet" href="style.css">
+<script>
+/* Тема применяется до отрисовки, чтобы страница не мигала */
+try { var t = localStorage.getItem('guide-theme'); if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+</head>
+<body>
+<div class="topbar"><button type="button" id="menu" aria-expanded="false" aria-controls="sidebar">Содержание</button><span>Столкновения</span></div>
+<div class="backdrop" id="backdrop"></div>
+<div class="layout">
+<aside class="sidebar" id="sidebar"><p class="brand">Ursina: шпаргалки</p><button type="button" class="theme-toggle" id="theme" hidden>Тёмная тема</button><nav class="toc" aria-label="Содержание"><ul><li><a href="index.html">Оглавление</a></li><li><a href="1-intro.html">1. Введение в Ursina</a></li><li><a href="2-first-program.html">2. Первая программа</a></li><li><a href="3-coordinates.html">3. Система координат</a></li><li><a href="4-collisions.html" aria-current="page">4. Столкновения</a><ul><li><a href="#s1">Добавление коллайдеров</a></li><li><a href="#s2">raycast()</a></li><li><a href="#s3">boxcast()</a></li><li><a href="#s4">intersects()</a></li><li><a href="#s5">HitInfo</a></li><li><a href="#s6">Дистанционная проверка</a></li><li><a href="#s7">Столкновение мыши</a></li><li><a href="#ex">Пример: готовая программа</a></li><li><a href="#err">Частые ошибки</a></li></ul></li><li><a href="5-text.html">5. Работа с текстом</a></li><li><a href="6-network.html">6. Сеть</a></li><li><a href="7-build.html">7. Сборка проекта</a></li></ul></nav></aside>
+<main class="main"><article class="prose">
+<header class="hero"><h1>Столкновения</h1><p class="lead">Коллайдеры, лучи, пересечения и мышь: как узнать, что во что попало.</p></header>
+<h2 id="s1">Добавление коллайдеров<a class="anchor" href="#s1" title="Ссылка на раздел">#</a></h2>
+<p>Виды: <code>box</code>, <code>sphere</code>, <code>capsule</code>, <code>mesh</code> (точный, но тяжелее).</p>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="n">wall</span> <span class="o">=</span> <span class="n">Entity</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s1">&#39;cube&#39;</span><span class="p">,</span> <span class="n">collider</span><span class="o">=</span><span class="s1">&#39;box&#39;</span><span class="p">)</span>
+<span class="n">ball</span> <span class="o">=</span> <span class="n">Entity</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s1">&#39;sphere&#39;</span><span class="p">,</span> <span class="n">collider</span><span class="o">=</span><span class="s1">&#39;sphere&#39;</span><span class="p">)</span>
+<span class="n">rock</span> <span class="o">=</span> <span class="n">Entity</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s1">&#39;rock&#39;</span><span class="p">,</span> <span class="n">collider</span><span class="o">=</span><span class="s1">&#39;mesh&#39;</span><span class="p">)</span>
+<span class="n">wall</span><span class="o">.</span><span class="n">collider</span> <span class="o">=</span> <span class="n">BoxCollider</span><span class="p">(</span><span class="n">wall</span><span class="p">,</span> <span class="n">center</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="n">wall</span><span class="o">.</span><span class="n">collider</span><span class="o">.</span><span class="n">visible</span> <span class="o">=</span> <span class="kc">True</span>        <span class="c1"># показать для отладки</span></code></pre></figure>
+<h2 id="s2">raycast()<a class="anchor" href="#s2" title="Ссылка на раздел">#</a></h2>
+<p>Луч из точки в направлении; возвращает первое попадание.</p>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="n">hit</span> <span class="o">=</span> <span class="n">raycast</span><span class="p">(</span><span class="n">player</span><span class="o">.</span><span class="n">world_position</span><span class="p">,</span> <span class="n">player</span><span class="o">.</span><span class="n">forward</span><span class="p">,</span>
+              <span class="n">distance</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">ignore</span><span class="o">=</span><span class="p">[</span><span class="n">player</span><span class="p">],</span> <span class="n">debug</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">hit</span><span class="o">.</span><span class="n">hit</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">hit</span><span class="o">.</span><span class="n">entity</span><span class="p">)</span></code></pre></figure>
+<h2 id="s3">boxcast()<a class="anchor" href="#s3" title="Ссылка на раздел">#</a></h2>
+<p>То же, но «толстый» луч — коробка заданной толщины.</p>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="n">hit</span> <span class="o">=</span> <span class="n">boxcast</span><span class="p">(</span><span class="n">player</span><span class="o">.</span><span class="n">world_position</span><span class="p">,</span> <span class="n">player</span><span class="o">.</span><span class="n">forward</span><span class="p">,</span>
+              <span class="n">distance</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">thickness</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">ignore</span><span class="o">=</span><span class="p">[</span><span class="n">player</span><span class="p">])</span></code></pre></figure>
+<h2 id="s4">intersects()<a class="anchor" href="#s4" title="Ссылка на раздел">#</a></h2>
+<p>Пересекается ли сам объект с чужими коллайдерами.</p>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="n">info</span> <span class="o">=</span> <span class="n">player</span><span class="o">.</span><span class="n">intersects</span><span class="p">()</span>
+<span class="k">if</span> <span class="n">info</span><span class="o">.</span><span class="n">hit</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">info</span><span class="o">.</span><span class="n">entities</span><span class="p">)</span></code></pre></figure>
+<h2 id="s5">HitInfo<a class="anchor" href="#s5" title="Ссылка на раздел">#</a></h2>
+<p>Что приходит из raycast, boxcast и intersects.</p>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="n">hit</span><span class="o">.</span><span class="n">hit</span>          <span class="c1"># True/False</span>
+<span class="n">hit</span><span class="o">.</span><span class="n">entity</span>       <span class="c1"># первый объект</span>
+<span class="n">hit</span><span class="o">.</span><span class="n">entities</span>     <span class="c1"># все объекты</span>
+<span class="n">hit</span><span class="o">.</span><span class="n">point</span>        <span class="c1"># точка (локально)  | hit.world_point — в мире</span>
+<span class="n">hit</span><span class="o">.</span><span class="n">distance</span>     <span class="c1"># расстояние</span>
+<span class="n">hit</span><span class="o">.</span><span class="n">normal</span>       <span class="c1"># нормаль           | hit.world_normal — в мире</span></code></pre></figure>
+<h2 id="s6">Дистанционная проверка<a class="anchor" href="#s6" title="Ссылка на раздел">#</a></h2>
+<p>Если форма не важна, хватит расстояния между объектами.</p>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="k">if</span> <span class="n">distance</span><span class="p">(</span><span class="n">player</span><span class="p">,</span> <span class="n">enemy</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;рядом!&#39;</span><span class="p">)</span></code></pre></figure>
+<h2 id="s7">Столкновение мыши<a class="anchor" href="#s7" title="Ссылка на раздел">#</a></h2>
+<p>Нужны коллайдеры у объектов.</p>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="n">e</span> <span class="o">=</span> <span class="n">mouse</span><span class="o">.</span><span class="n">hovered_entity</span>          <span class="c1"># объект под курсором или None</span>
+<span class="n">p</span> <span class="o">=</span> <span class="n">mouse</span><span class="o">.</span><span class="n">world_point</span>             <span class="c1"># точка касания в мире</span>
+<span class="n">n</span> <span class="o">=</span> <span class="n">mouse</span><span class="o">.</span><span class="n">normal</span>
+<span class="n">box</span><span class="o">.</span><span class="n">on_click</span> <span class="o">=</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">destroy</span><span class="p">(</span><span class="n">box</span><span class="p">)</span></code></pre></figure>
+<h2 id="ex">Пример: готовая программа<a class="anchor" href="#ex" title="Ссылка на раздел">#</a></h2>
+<p>Сохраните код как <code>main.py</code> в отдельной папке и запустите.</p>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="kn">from</span><span class="w"> </span><span class="nn">ursina</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">app</span> <span class="o">=</span> <span class="n">Ursina</span><span class="p">()</span>
+<span class="n">Entity</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s1">&#39;plane&#39;</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">texture</span><span class="o">=</span><span class="s1">&#39;grass&#39;</span><span class="p">,</span> <span class="n">collider</span><span class="o">=</span><span class="s1">&#39;box&#39;</span><span class="p">)</span>
+<span class="n">blocks</span> <span class="o">=</span> <span class="p">[</span><span class="n">Entity</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s1">&#39;cube&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="o">.</span><span class="n">random_color</span><span class="p">(),</span>
+                 <span class="n">position</span><span class="o">=</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span> <span class="mf">.5</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span> <span class="n">collider</span><span class="o">=</span><span class="s1">&#39;box&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)]</span>
+<span class="n">player</span> <span class="o">=</span> <span class="n">Entity</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s1">&#39;cube&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="o">.</span><span class="n">azure</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">.5</span><span class="p">)</span>
+<span class="n">camera</span><span class="o">.</span><span class="n">position</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="o">-</span><span class="mi">14</span><span class="p">)</span>
+<span class="n">camera</span><span class="o">.</span><span class="n">rotation_x</span> <span class="o">=</span> <span class="mi">35</span>
+<span class="n">Text</span><span class="p">(</span><span class="s1">&#39;WASD — ходить, клик по блоку — удалить&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">.45</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">():</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="n">Vec3</span><span class="p">(</span><span class="n">held_keys</span><span class="p">[</span><span class="s1">&#39;d&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">held_keys</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="n">held_keys</span><span class="p">[</span><span class="s1">&#39;w&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">held_keys</span><span class="p">[</span><span class="s1">&#39;s&#39;</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">d</span> <span class="o">==</span> <span class="n">Vec3</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">return</span>
+    <span class="n">ray</span> <span class="o">=</span> <span class="n">raycast</span><span class="p">(</span><span class="n">player</span><span class="o">.</span><span class="n">world_position</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">normalized</span><span class="p">(),</span> <span class="n">distance</span><span class="o">=</span><span class="mf">.8</span><span class="p">,</span> <span class="n">ignore</span><span class="o">=</span><span class="p">[</span><span class="n">player</span><span class="p">])</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">ray</span><span class="o">.</span><span class="n">hit</span><span class="p">:</span>                      <span class="c1"># впереди свободно — идём</span>
+        <span class="n">player</span><span class="o">.</span><span class="n">position</span> <span class="o">+=</span> <span class="n">d</span><span class="o">.</span><span class="n">normalized</span><span class="p">()</span> <span class="o">*</span> <span class="mi">5</span> <span class="o">*</span> <span class="n">time</span><span class="o">.</span><span class="n">dt</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">input</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
+    <span class="n">e</span> <span class="o">=</span> <span class="n">mouse</span><span class="o">.</span><span class="n">hovered_entity</span>
+    <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s1">&#39;left mouse down&#39;</span> <span class="ow">and</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">blocks</span><span class="p">:</span>
+        <span class="n">blocks</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="n">destroy</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+
+<span class="n">app</span><span class="o">.</span><span class="n">run</span><span class="p">()</span></code></pre></figure>
+<h2 id="err">Частые ошибки<a class="anchor" href="#err" title="Ссылка на раздел">#</a></h2>
+<ul><li>Луч из центра объекта попадает в его же коллайдер — добавляйте <code>ignore=[self]</code>.</li><li>Нет коллайдера — нет <code>hovered_entity</code>, <code>on_click</code> и попаданий лучом.</li><li><code>mesh</code>-коллайдер на сложной модели замедляет игру: берите упрощённую форму.</li></ul>
+<div class="pn"><a href="3-coordinates.html">← Система координат</a><a href="5-text.html">Работа с текстом →</a></div>
+</article></main>
+</div>
+<script>
+(function () {
+  var root = document.documentElement;
+  var body = document.body;
+
+  /* ---------- Тема ---------- */
+  var themeBtn = document.getElementById('theme');
+  function effectiveTheme() {
+    var t = root.getAttribute('data-theme');
+    if (t) return t;
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  function updateThemeLabel() { themeBtn.textContent = effectiveTheme() === 'dark' ? 'Светлая тема' : 'Тёмная тема'; }
+  themeBtn.hidden = false;
+  updateThemeLabel();
+  themeBtn.addEventListener('click', function () {
+    var next = effectiveTheme() === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('guide-theme', next); } catch (e) {}
+    updateThemeLabel();
+  });
+
+  /* ---------- Копирование кода ---------- */
+  function copyText(text) {
+    if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(text);
+    return new Promise(function (resolve, reject) {
+      var ta = document.createElement('textarea');
+      ta.value = text; ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(ta);
+      ok ? resolve() : reject(new Error('copy failed'));
+    });
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('.code'), function (fig) {
+    var btn = fig.querySelector('.copy');
+    var code = fig.querySelector('pre code');
+    var timer;
+    btn.hidden = false;
+    btn.addEventListener('click', function () {
+      copyText(code.textContent).then(function () {
+        btn.textContent = 'Скопировано'; btn.dataset.state = 'done';
+      }, function () {
+        btn.textContent = 'Не удалось'; btn.dataset.state = 'fail';
+      }).then(function () {
+        clearTimeout(timer);
+        timer = setTimeout(function () { btn.textContent = 'Скопировать'; delete btn.dataset.state; }, 1800);
+      });
+    });
+  });
+
+  /* ---------- Оглавление: подсветка текущего раздела ---------- */
+  var nav = document.getElementById('sidebar');
+  var links = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  var items = links.map(function (a) {
+    return { a: a, h: document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1))) };
+  }).filter(function (x) { return x.h; });
+  var current = null, ticking = false;
+
+  function update() {
+    ticking = false;
+    var line = window.innerWidth <= 960 ? 96 : 80;
+    var found = items.length ? items[0] : null;
+    for (var i = 0; i < items.length; i++) {
+      if (items[i].h.getBoundingClientRect().top <= line) found = items[i]; else break;
+    }
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4 && items.length) {
+      found = items[items.length - 1];
+    }
+    if (!found || found === current) return;
+    if (current) current.a.removeAttribute('aria-current');
+    current = found;
+    current.a.setAttribute('aria-current', 'location');
+    var r = current.a.getBoundingClientRect(), b = nav.getBoundingClientRect();
+    if (r.top < b.top + 60) nav.scrollTop -= (b.top + 60 - r.top);
+    else if (r.bottom > b.bottom - 60) nav.scrollTop += (r.bottom - (b.bottom - 60));
+  }
+  window.addEventListener('scroll', function () {
+    if (!ticking) { ticking = true; requestAnimationFrame(update); }
+  }, { passive: true });
+  window.addEventListener('resize', update);
+  update();
+
+  /* ---------- Мобильное меню ---------- */
+  var menu = document.getElementById('menu');
+  function setNav(open) {
+    body.classList.toggle('nav-open', open);
+    menu.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+  menu.addEventListener('click', function () { setNav(!body.classList.contains('nav-open')); });
+  document.getElementById('backdrop').addEventListener('click', function () { setNav(false); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setNav(false); });
+  links.forEach(function (a) { a.addEventListener('click', function () { setNav(false); }); });
+})();
+</script>
+</body>
+</html>

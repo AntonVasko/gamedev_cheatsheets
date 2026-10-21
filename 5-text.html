@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Работа с текстом — шпаргалка Ursina</title>
+<link rel="stylesheet" href="style.css">
+<script>
+/* Тема применяется до отрисовки, чтобы страница не мигала */
+try { var t = localStorage.getItem('guide-theme'); if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+</head>
+<body>
+<div class="topbar"><button type="button" id="menu" aria-expanded="false" aria-controls="sidebar">Содержание</button><span>Работа с текстом</span></div>
+<div class="backdrop" id="backdrop"></div>
+<div class="layout">
+<aside class="sidebar" id="sidebar"><p class="brand">Ursina: шпаргалки</p><button type="button" class="theme-toggle" id="theme" hidden>Тёмная тема</button><nav class="toc" aria-label="Содержание"><ul><li><a href="index.html">Оглавление</a></li><li><a href="1-intro.html">1. Введение в Ursina</a></li><li><a href="2-first-program.html">2. Первая программа</a></li><li><a href="3-coordinates.html">3. Система координат</a></li><li><a href="4-collisions.html">4. Столкновения</a></li><li><a href="5-text.html" aria-current="page">5. Работа с текстом</a><ul><li><a href="#s1">Text</a></li><li><a href="#s2">Изменение и перенос</a></li><li><a href="#s3">Цветные теги</a></li><li><a href="#s4">Шрифт и разрешение</a></li><li><a href="#s5">Текст у префабов</a></li><li><a href="#s6">Печатная машинка</a></li><li><a href="#ex">Пример: готовая программа</a></li><li><a href="#err">Частые ошибки</a></li></ul></li><li><a href="6-network.html">6. Сеть</a></li><li><a href="7-build.html">7. Сборка проекта</a></li></ul></nav></aside>
+<main class="main"><article class="prose">
+<header class="hero"><h1>Работа с текстом</h1><p class="lead">Класс <code>Text</code>: надписи, обновление, шрифты и текст у готовых элементов интерфейса.</p></header>
+<h2 id="s1">Text<a class="anchor" href="#s1" title="Ссылка на раздел">#</a></h2>
+<p>По умолчанию лежит в <code>camera.ui</code>, координаты — как в интерфейсе.</p>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="n">Text</span><span class="p">(</span><span class="s1">&#39;Счёт: 0&#39;</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">.85</span><span class="p">,</span> <span class="mf">.45</span><span class="p">),</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="o">.</span><span class="n">yellow</span><span class="p">)</span>
+<span class="n">Text</span><span class="p">(</span><span class="s1">&#39;Пауза&#39;</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">background</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code></pre></figure>
+<h2 id="s2">Изменение и перенос<a class="anchor" href="#s2" title="Ссылка на раздел">#</a></h2>
+<p>Меняйте свойство <code>text</code>. Перенос — <code>\n</code> или <code>wordwrap</code>.</p>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="n">hud</span> <span class="o">=</span> <span class="n">Text</span><span class="p">(</span><span class="s1">&#39;Очки: 0&#39;</span><span class="p">)</span>
+<span class="n">hud</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Очки: </span><span class="si">{</span><span class="n">score</span><span class="si">}</span><span class="s1">&#39;</span>
+<span class="n">Text</span><span class="p">(</span><span class="s1">&#39;Длинный текст, который нужно перенести&#39;</span><span class="p">,</span> <span class="n">wordwrap</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span></code></pre></figure>
+<h2 id="s3">Цветные теги<a class="anchor" href="#s3" title="Ссылка на раздел">#</a></h2>
+<p>Цвет части строки задаётся тегом, <code>&lt;default&gt;</code> возвращает обычный.</p>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="n">Text</span><span class="p">(</span><span class="s1">&#39;&lt;red&gt;Урон &lt;default&gt;получен&#39;</span><span class="p">)</span></code></pre></figure>
+<h2 id="s4">Шрифт и разрешение<a class="anchor" href="#s4" title="Ссылка на раздел">#</a></h2>
+<p>Если кириллица выглядит плохо — укажите шрифт с её поддержкой. Задавайте до создания текстов.</p>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="n">Text</span><span class="o">.</span><span class="n">default_font</span> <span class="o">=</span> <span class="s1">&#39;assets/Roboto.ttf&#39;</span>
+<span class="n">Text</span><span class="o">.</span><span class="n">default_resolution</span> <span class="o">=</span> <span class="mi">1080</span> <span class="o">*</span> <span class="n">Text</span><span class="o">.</span><span class="n">size</span>
+<span class="n">Text</span><span class="p">(</span><span class="s1">&#39;Привет&#39;</span><span class="p">,</span> <span class="n">font</span><span class="o">=</span><span class="s1">&#39;assets/Roboto.ttf&#39;</span><span class="p">)</span></code></pre></figure>
+<h2 id="s5">Текст у префабов<a class="anchor" href="#s5" title="Ссылка на раздел">#</a></h2>
+<p>У <code>Button</code> и других готовых элементов текст меняется через <code>text</code>.</p>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="n">btn</span> <span class="o">=</span> <span class="n">Button</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="s1">&#39;Играть&#39;</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="p">(</span><span class="mf">.25</span><span class="p">,</span> <span class="mf">.08</span><span class="p">))</span>
+<span class="n">btn</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="s1">&#39;Пауза&#39;</span></code></pre></figure>
+<h2 id="s6">Печатная машинка<a class="anchor" href="#s6" title="Ссылка на раздел">#</a></h2>
+<p>Текст появляется по буквам.</p>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="n">story</span> <span class="o">=</span> <span class="n">Text</span><span class="p">(</span><span class="s1">&#39;Добро пожаловать…&#39;</span><span class="p">)</span>
+<span class="n">story</span><span class="o">.</span><span class="n">appear</span><span class="p">(</span><span class="n">speed</span><span class="o">=</span><span class="mf">.05</span><span class="p">)</span></code></pre></figure>
+<h2 id="ex">Пример: готовая программа<a class="anchor" href="#ex" title="Ссылка на раздел">#</a></h2>
+<p>Сохраните код как <code>main.py</code> в отдельной папке и запустите.</p>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="kn">from</span><span class="w"> </span><span class="nn">ursina</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">app</span> <span class="o">=</span> <span class="n">Ursina</span><span class="p">()</span>
+<span class="n">window</span><span class="o">.</span><span class="n">fps_counter</span><span class="o">.</span><span class="n">enabled</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="n">score</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="n">Text</span><span class="p">(</span><span class="s1">&#39;Ursina HUD&#39;</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">y</span><span class="o">=</span><span class="mf">.4</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="o">.</span><span class="n">orange</span><span class="p">)</span>
+<span class="n">hud</span> <span class="o">=</span> <span class="n">Text</span><span class="p">(</span><span class="s1">&#39;Очки: 0&#39;</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">.85</span><span class="p">,</span> <span class="mf">.45</span><span class="p">))</span>
+<span class="n">story</span> <span class="o">=</span> <span class="n">Text</span><span class="p">(</span><span class="s1">&#39;Добро пожаловать в игру! Жмите кнопку, чтобы набрать очки.&#39;</span><span class="p">,</span>
+             <span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">wordwrap</span><span class="o">=</span><span class="mi">40</span><span class="p">)</span>
+<span class="n">story</span><span class="o">.</span><span class="n">appear</span><span class="p">(</span><span class="n">speed</span><span class="o">=</span><span class="mf">.04</span><span class="p">)</span>
+
+<span class="n">btn</span> <span class="o">=</span> <span class="n">Button</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="s1">&#39;+1 очко&#39;</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="p">(</span><span class="mf">.25</span><span class="p">,</span> <span class="mf">.08</span><span class="p">),</span> <span class="n">y</span><span class="o">=-</span><span class="mf">.3</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="o">.</span><span class="n">azure</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">add</span><span class="p">():</span>
+    <span class="k">global</span> <span class="n">score</span>
+    <span class="n">score</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">hud</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Очки: </span><span class="si">{</span><span class="n">score</span><span class="si">}</span><span class="s1">&#39;</span>
+    <span class="k">if</span> <span class="n">score</span> <span class="o">&gt;=</span> <span class="mi">5</span><span class="p">:</span>
+        <span class="n">btn</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="s1">&#39;Хватит!&#39;</span>
+
+<span class="n">btn</span><span class="o">.</span><span class="n">on_click</span> <span class="o">=</span> <span class="n">add</span>
+<span class="n">app</span><span class="o">.</span><span class="n">run</span><span class="p">()</span></code></pre></figure>
+<h2 id="err">Частые ошибки<a class="anchor" href="#err" title="Ссылка на раздел">#</a></h2>
+<ul><li>Меняете переменную, но не <code>text.text</code> — на экране ничего не изменится.</li><li>Шрифт нужно задать <b>до</b> создания надписей — уже созданные не перерисуются.</li></ul>
+<div class="pn"><a href="4-collisions.html">← Столкновения</a><a href="6-network.html">Сеть →</a></div>
+</article></main>
+</div>
+<script>
+(function () {
+  var root = document.documentElement;
+  var body = document.body;
+
+  /* ---------- Тема ---------- */
+  var themeBtn = document.getElementById('theme');
+  function effectiveTheme() {
+    var t = root.getAttribute('data-theme');
+    if (t) return t;
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  function updateThemeLabel() { themeBtn.textContent = effectiveTheme() === 'dark' ? 'Светлая тема' : 'Тёмная тема'; }
+  themeBtn.hidden = false;
+  updateThemeLabel();
+  themeBtn.addEventListener('click', function () {
+    var next = effectiveTheme() === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('guide-theme', next); } catch (e) {}
+    updateThemeLabel();
+  });
+
+  /* ---------- Копирование кода ---------- */
+  function copyText(text) {
+    if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(text);
+    return new Promise(function (resolve, reject) {
+      var ta = document.createElement('textarea');
+      ta.value = text; ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(ta);
+      ok ? resolve() : reject(new Error('copy failed'));
+    });
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('.code'), function (fig) {
+    var btn = fig.querySelector('.copy');
+    var code = fig.querySelector('pre code');
+    var timer;
+    btn.hidden = false;
+    btn.addEventListener('click', function () {
+      copyText(code.textContent).then(function () {
+        btn.textContent = 'Скопировано'; btn.dataset.state = 'done';
+      }, function () {
+        btn.textContent = 'Не удалось'; btn.dataset.state = 'fail';
+      }).then(function () {
+        clearTimeout(timer);
+        timer = setTimeout(function () { btn.textContent = 'Скопировать'; delete btn.dataset.state; }, 1800);
+      });
+    });
+  });
+
+  /* ---------- Оглавление: подсветка текущего раздела ---------- */
+  var nav = document.getElementById('sidebar');
+  var links = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  var items = links.map(function (a) {
+    return { a: a, h: document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1))) };
+  }).filter(function (x) { return x.h; });
+  var current = null, ticking = false;
+
+  function update() {
+    ticking = false;
+    var line = window.innerWidth <= 960 ? 96 : 80;
+    var found = items.length ? items[0] : null;
+    for (var i = 0; i < items.length; i++) {
+      if (items[i].h.getBoundingClientRect().top <= line) found = items[i]; else break;
+    }
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4 && items.length) {
+      found = items[items.length - 1];
+    }
+    if (!found || found === current) return;
+    if (current) current.a.removeAttribute('aria-current');
+    current = found;
+    current.a.setAttribute('aria-current', 'location');
+    var r = current.a.getBoundingClientRect(), b = nav.getBoundingClientRect();
+    if (r.top < b.top + 60) nav.scrollTop -= (b.top + 60 - r.top);
+    else if (r.bottom > b.bottom - 60) nav.scrollTop += (r.bottom - (b.bottom - 60));
+  }
+  window.addEventListener('scroll', function () {
+    if (!ticking) { ticking = true; requestAnimationFrame(update); }
+  }, { passive: true });
+  window.addEventListener('resize', update);
+  update();
+
+  /* ---------- Мобильное меню ---------- */
+  var menu = document.getElementById('menu');
+  function setNav(open) {
+    body.classList.toggle('nav-open', open);
+    menu.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+  menu.addEventListener('click', function () { setNav(!body.classList.contains('nav-open')); });
+  document.getElementById('backdrop').addEventListener('click', function () { setNav(false); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setNav(false); });
+  links.forEach(function (a) { a.addEventListener('click', function () { setNav(false); }); });
+})();
+</script>
+</body>
+</html>

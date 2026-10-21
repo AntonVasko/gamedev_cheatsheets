@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Введение в Ursina — шпаргалка Ursina</title>
+<link rel="stylesheet" href="style.css">
+<script>
+/* Тема применяется до отрисовки, чтобы страница не мигала */
+try { var t = localStorage.getItem('guide-theme'); if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+</head>
+<body>
+<div class="topbar"><button type="button" id="menu" aria-expanded="false" aria-controls="sidebar">Содержание</button><span>Введение в Ursina</span></div>
+<div class="backdrop" id="backdrop"></div>
+<div class="layout">
+<aside class="sidebar" id="sidebar"><p class="brand">Ursina: шпаргалки</p><button type="button" class="theme-toggle" id="theme" hidden>Тёмная тема</button><nav class="toc" aria-label="Содержание"><ul><li><a href="index.html">Оглавление</a></li><li><a href="1-intro.html" aria-current="page">1. Введение в Ursina</a><ul><li><a href="#s1">Установка</a></li><li><a href="#s2">Другие варианты</a></li><li><a href="#s3">Структура проекта</a></li><li><a href="#s4">Скелет программы</a></li><li><a href="#s5">Параметры окна</a></li><li><a href="#s6">Камера для обзора</a></li><li><a href="#s7">Запуск</a></li><li><a href="#ex">Пример: готовая программа</a></li><li><a href="#err">Частые ошибки</a></li></ul></li><li><a href="2-first-program.html">2. Первая программа</a></li><li><a href="3-coordinates.html">3. Система координат</a></li><li><a href="4-collisions.html">4. Столкновения</a></li><li><a href="5-text.html">5. Работа с текстом</a></li><li><a href="6-network.html">6. Сеть</a></li><li><a href="7-build.html">7. Сборка проекта</a></li></ul></nav></aside>
+<main class="main"><article class="prose">
+<header class="hero"><h1>Введение в Ursina</h1><p class="lead">Ursina — движок на Python поверх Panda3D для 2D- и 3D-игр. Здесь всё основное: от установки до первого запуска.</p></header>
+<h2 id="s1">Установка<a class="anchor" href="#s1" title="Ссылка на раздел">#</a></h2>
+<p>Нужен Python 3.10+. Лучше ставить в виртуальное окружение.</p>
+<figure class="code"><div class="code-bar"><span class="lang">bash</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code>python<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>.venv
+.venv<span class="se">\S</span>cripts<span class="se">\a</span>ctivate<span class="w">        </span><span class="c1"># Linux/macOS: source .venv/bin/activate</span>
+pip<span class="w"> </span>install<span class="w"> </span>ursina
+<span class="c1"># то же через uv:  uv add ursina</span></code></pre></figure>
+<h2 id="s2">Другие варианты<a class="anchor" href="#s2" title="Ссылка на раздел">#</a></h2>
+<p>Свежая версия с GitHub и необязательные доп. пакеты:</p>
+<figure class="code"><div class="code-bar"><span class="lang">bash</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code>pip<span class="w"> </span>install<span class="w"> </span>git+https://github.com/pokepetter/ursina.git
+pip<span class="w"> </span>install<span class="w"> </span>ursina<span class="o">[</span>extras<span class="o">]</span></code></pre></figure>
+<h2 id="s3">Структура проекта<a class="anchor" href="#s3" title="Ссылка на раздел">#</a></h2>
+<p>Модели, текстуры и шрифты Ursina ищет по имени в папке проекта и её подпапках.</p>
+<figure class="code"><div class="code-bar"><span class="lang">текст</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code>my_game/
+  main.py
+  assets/
+    ship.obj
+    wall.png</code></pre></figure>
+<h2 id="s4">Скелет программы<a class="anchor" href="#s4" title="Ссылка на раздел">#</a></h2>
+<p>Всегда одно и то же: импорт → окно → объекты → главный цикл.</p>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="kn">from</span><span class="w"> </span><span class="nn">ursina</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>      <span class="c1"># 1. импорт всего нужного</span>
+
+<span class="n">app</span> <span class="o">=</span> <span class="n">Ursina</span><span class="p">()</span>            <span class="c1"># 2. окно и движок</span>
+
+<span class="c1"># 3. объекты, функции update() и input()</span>
+
+<span class="n">app</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>                 <span class="c1"># 4. запуск главного цикла</span></code></pre></figure>
+<h2 id="s5">Параметры окна<a class="anchor" href="#s5" title="Ссылка на раздел">#</a></h2>
+<p>Задаются при создании или позже через <code>window</code>.</p>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="n">app</span> <span class="o">=</span> <span class="n">Ursina</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Моя игра&#39;</span><span class="p">,</span> <span class="n">borderless</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fullscreen</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+             <span class="n">vsync</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">development_mode</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code></pre></figure>
+<h2 id="s6">Камера для обзора<a class="anchor" href="#s6" title="Ссылка на раздел">#</a></h2>
+<p><code>EditorCamera</code>: ПКМ — вращение, СКМ — сдвиг, колесо — зум.</p>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="n">EditorCamera</span><span class="p">()</span></code></pre></figure>
+<h2 id="s7">Запуск<a class="anchor" href="#s7" title="Ссылка на раздел">#</a></h2>
+<p>Из папки проекта. Окно закрывается кнопкой в углу или из кода через <code>application.quit()</code>.</p>
+<figure class="code"><div class="code-bar"><span class="lang">bash</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code>python<span class="w"> </span>main.py</code></pre></figure>
+<h2 id="ex">Пример: готовая программа<a class="anchor" href="#ex" title="Ссылка на раздел">#</a></h2>
+<p>Сохраните код как <code>main.py</code> в отдельной папке и запустите.</p>
+<figure class="code"><div class="code-bar"><span class="lang">python</span><button class="copy" type="button" hidden>Скопировать</button></div><pre tabindex="0"><code><span class="kn">from</span><span class="w"> </span><span class="nn">ursina</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">app</span> <span class="o">=</span> <span class="n">Ursina</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Привет, Ursina&#39;</span><span class="p">)</span>
+
+<span class="n">cube</span> <span class="o">=</span> <span class="n">Entity</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s1">&#39;cube&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="o">.</span><span class="n">orange</span><span class="p">,</span> <span class="n">texture</span><span class="o">=</span><span class="s1">&#39;brick&#39;</span><span class="p">)</span>
+<span class="n">EditorCamera</span><span class="p">()</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">():</span>
+    <span class="n">cube</span><span class="o">.</span><span class="n">rotation_y</span> <span class="o">+=</span> <span class="mi">60</span> <span class="o">*</span> <span class="n">time</span><span class="o">.</span><span class="n">dt</span>   <span class="c1"># 60 градусов в секунду</span>
+
+<span class="n">app</span><span class="o">.</span><span class="n">run</span><span class="p">()</span></code></pre></figure>
+<h2 id="err">Частые ошибки<a class="anchor" href="#err" title="Ссылка на раздел">#</a></h2>
+<ul><li><code>ModuleNotFoundError: ursina</code> — окружение не активировано или пакет поставлен в другой Python.</li><li>Окно сразу закрывается или чёрный экран — проверьте драйвер видеокарты: нужен OpenGL 3.3.</li></ul>
+<div class="pn"><span></span><a href="2-first-program.html">Первая программа →</a></div>
+</article></main>
+</div>
+<script>
+(function () {
+  var root = document.documentElement;
+  var body = document.body;
+
+  /* ---------- Тема ---------- */
+  var themeBtn = document.getElementById('theme');
+  function effectiveTheme() {
+    var t = root.getAttribute('data-theme');
+    if (t) return t;
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  function updateThemeLabel() { themeBtn.textContent = effectiveTheme() === 'dark' ? 'Светлая тема' : 'Тёмная тема'; }
+  themeBtn.hidden = false;
+  updateThemeLabel();
+  themeBtn.addEventListener('click', function () {
+    var next = effectiveTheme() === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('guide-theme', next); } catch (e) {}
+    updateThemeLabel();
+  });
+
+  /* ---------- Копирование кода ---------- */
+  function copyText(text) {
+    if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(text);
+    return new Promise(function (resolve, reject) {
+      var ta = document.createElement('textarea');
+      ta.value = text; ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(ta);
+      ok ? resolve() : reject(new Error('copy failed'));
+    });
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('.code'), function (fig) {
+    var btn = fig.querySelector('.copy');
+    var code = fig.querySelector('pre code');
+    var timer;
+    btn.hidden = false;
+    btn.addEventListener('click', function () {
+      copyText(code.textContent).then(function () {
+        btn.textContent = 'Скопировано'; btn.dataset.state = 'done';
+      }, function () {
+        btn.textContent = 'Не удалось'; btn.dataset.state = 'fail';
+      }).then(function () {
+        clearTimeout(timer);
+        timer = setTimeout(function () { btn.textContent = 'Скопировать'; delete btn.dataset.state; }, 1800);
+      });
+    });
+  });
+
+  /* ---------- Оглавление: подсветка текущего раздела ---------- */
+  var nav = document.getElementById('sidebar');
+  var links = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  var items = links.map(function (a) {
+    return { a: a, h: document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1))) };
+  }).filter(function (x) { return x.h; });
+  var current = null, ticking = false;
+
+  function update() {
+    ticking = false;
+    var line = window.innerWidth <= 960 ? 96 : 80;
+    var found = items.length ? items[0] : null;
+    for (var i = 0; i < items.length; i++) {
+      if (items[i].h.getBoundingClientRect().top <= line) found = items[i]; else break;
+    }
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4 && items.length) {
+      found = items[items.length - 1];
+    }
+    if (!found || found === current) return;
+    if (current) current.a.removeAttribute('aria-current');
+    current = found;
+    current.a.setAttribute('aria-current', 'location');
+    var r = current.a.getBoundingClientRect(), b = nav.getBoundingClientRect();
+    if (r.top < b.top + 60) nav.scrollTop -= (b.top + 60 - r.top);
+    else if (r.bottom > b.bottom - 60) nav.scrollTop += (r.bottom - (b.bottom - 60));
+  }
+  window.addEventListener('scroll', function () {
+    if (!ticking) { ticking = true; requestAnimationFrame(update); }
+  }, { passive: true });
+  window.addEventListener('resize', update);
+  update();
+
+  /* ---------- Мобильное меню ---------- */
+  var menu = document.getElementById('menu');
+  function setNav(open) {
+    body.classList.toggle('nav-open', open);
+    menu.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+  menu.addEventListener('click', function () { setNav(!body.classList.contains('nav-open')); });
+  document.getElementById('backdrop').addEventListener('click', function () { setNav(false); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setNav(false); });
+  links.forEach(function (a) { a.addEventListener('click', function () { setNav(false); }); });
+})();
+</script>
+</body>
+</html>
